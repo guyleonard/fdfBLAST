@@ -1,0 +1,34 @@
+The fdfBLAST program was developed under a free and open-source Ubuntu Linux environment (http://www.ubuntu.com), although it should be capable of running on any UNIX based operating system (including Apple OSX) where the following programs are available for your system. Perl v5.10.0 (http://www.perl.org) was used to write the main portions of the script. The legacy NCBI BLAST executables (version 2.2.21) are used to perform the BLASTp and RPS-BLAST {Marchler-Bauer, 2005 #1036} searches and to prepare the proteome databases ready for use.
+
+A new version of the local BLAST executables is now available, called BLAST+ executables, but they were not released at the inception of the program – there is no reason why fdfBLAST could not be adapted to utilise these in a future release – although there is no pressing need to change the script currently since no particular advantage is conferred. Later portions of the script employ the use of the program HMMER3 (http://hmmer.org) and a copy of the Sanger Institute’s PFAM database (Pfam 24.0 - October 2009; Finn, 2010). and the NCBI Conserved Domain Database (CDD version 2.2.2).
+
+i) Create a folder called fdf and put the script there...
+
+1a) Download your genomes and place them in a folder labelled "genomes" it can be anywhere, you can either enter the directory manually when running fdf or edit the script in the Sub set_genome_dir.
+1b) Make sure they are all .fas - it helps to go with a consistent naming scheme so for example Ignicoccus islandicus I would rename to Iislandicus or similar.
+1c) fdfBLAST is unable to deal with ncbi style fasta definition lines, so you need to either REFGEN them or manually edit them so you have at least a unique (Across all genomes) accession number and some way of identifying which genome it came from e.g. ">12345Ii"
+
+2a) You need a global copy of BLAST installed - you need the legacy blast executables (it won't work with BLAST+) - they can be global or in a sub folder called "blast"
+2a-i) You can get them here http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download
+2b) You also need a few dependencies installed: Math::BigFloat, GD and BioPerl
+2b-i) You can install them on the command line thus: sudo perl -MCPAN -e shell followed by "install Math:BigFloat" etc you can search for other packages "i /package::name/" - there may be dependencies I have forgotten about related to GD that you need to install as part of debian. libgd-src or something similar
+
+3) You should now be ready to go! HAHAHAHAHAHA Give your run a name and a folder of that name will be created in the "run" directory under the fdf folder where all output will go.
+3a) Run steps 1 and 2 which are just formatdb and blastall - the output of these will appear in the genomes dir.
+
+4) Steps 3 and 4 are the main parts of fdfBLAST and should run on their own and without any errors - there are a couple of options to change if you wish but I would leave them at the defaults for the first run.
+
+5) Step 5 is the output of the fusions. Initially it will just output alignment diagrams (in the differentials folder) but no CDD or PFAM domains - so you can click through the filename prompt. You NEED to run it twice - first to get a list of the sequences you need to PFAM etc...
+
+6) Before running the second time. In the folder named whatever you called your run there will be two files: composite_list and split_list.
+6b) You need to use the command line program "sort" to sort them then use the program "uniq -u" to remove any duplicates - else it will take hmmscan hours. Then use "cat" to put them together. This will be the file you use to extract the sequences from the fasta files.
+
+7) Use the script "get_non_ncbi_seqs.pl" which I'll give to you on wednesday to extract all the seqs based on the accession in the file you created in step 6
+7b) It will produce a set of files named by each of the genomes. Use "cat" to put them all together and then you will need to run PFAM or CDD on them.
+
+8) For PFAM you will need to download the PFAM database and HMMER  - use hmmpress on the database you downloaded to get it ready for hmmscan.
+
+9) use "hmmscan --cpu 6 --noali input.fasta >output.out" to generate all the domains
+9b) use another script hmmscan_hmmparse.pl to create a modified version of the above output.
+
+10) rerun fdfblast step 5 with the newly created file output of the hmmparse script.
