@@ -1,3 +1,5 @@
+This is a work in progress. I will be updating this fequently in the coming months, in readyness for peer review submission and publication. Prepare for mnay changes.
+
 The fdfBLAST program was developed under a free and open-source Ubuntu Linux environment (http://www.ubuntu.com), although it should be capable of running on any UNIX based operating system (including Apple OSX) where the following programs are available for your system. Perl v5.10.0 (http://www.perl.org) was used to write the main portions of the script. The legacy NCBI BLAST executables (version 2.2.21) are used to perform the BLASTp and RPS-BLAST {Marchler-Bauer, 2005 #1036} searches and to prepare the proteome databases ready for use.
 
 A new version of the local BLAST executables is now available, called BLAST+ executables, but they were not released at the inception of the program – there is no reason why fdfBLAST could not be adapted to utilise these in a future release – although there is no pressing need to change the script currently since no particular advantage is conferred. Later portions of the script employ the use of the program HMMER3 (http://hmmer.org) and a copy of the Sanger Institute’s PFAM database (Pfam 24.0 - October 2009; Finn, 2010). and the NCBI Conserved Domain Database (CDD version 2.2.2).
@@ -32,3 +34,11 @@ i) Create a folder called fdf and put the script there...
 9b) use another script hmmscan_hmmparse.pl to create a modified version of the above output.
 
 10) rerun fdfblast step 5 with the newly created file output of the hmmparse script.
+
+
+
+
+
+Accessorry Scripts
+------------------
+hmm3scan_parser.pl -- Copyright Bill Wickstead.
