@@ -5,6 +5,7 @@
 # Internal version based on 1.9.9.2	  #
 $VERSION = "1.2012.beta";    #
 ###########################################
+##use warnings;
 
 # Import Modules
 use Bio::SearchIO;           # Bioperl for input/output/persing of BLAST etc
@@ -13,16 +14,14 @@ use File::Basename;          # Remove path information and extract 8.3 filenames
 use GD;                      # Creates PNG images
 
 # use GD::SVG;	       # Creates SVG images - uncomment if you want SVG output
-use Math::BigFloat
-  ;    # Arbitrary size floating point math package (handles e-values)
-use Switch
-  ;    # A switch statement for Perl - deprecated, consider switch to given/when
-use Time::Local;    # For time elapsed when running different stages
+use Math::BigFloat;          # Arbitrary size floating point math package (handles e-values)
+use Switch;                  # A given statement for Perl - deprecated, consider given to given/when
+use feature qw(switch);      # This is the given replacement
+use Time::Local;             # For time elapsed when running different stages
 
 # Global Directory Information
-our $WORKING_DIR = getcwd;
-our $BLAST_BIN_DIR =
-  "/usr/bin";       # Normal install is in /usr/bin/ - change to your dir...
+our $WORKING_DIR   = getcwd;
+our $BLAST_BIN_DIR = "/usr/bin";    # Normal install is in /usr/bin/ - change to your dir...
 
 # Other Variables
 our $EMPTY = q{};
@@ -30,12 +29,11 @@ our $EMPTY = q{};
 # Run these subroutines first...
 #&run_blast_check;                            # Check for BLAST - You really should just have this installed.
 our $GENOME_DIR = &set_genome_dir;    # Set where to look for genome directories
-my $core_num, $cores =
-  &detect_multi_core;    # Check for single or multi-core machine for BLAST
-&which_genomes;          # Check which genome folder to use!
-&initial_menu;           # User input for run number or next
-&run_ID;                 # Sets run number if none set, sets directory paths
-&menu;                   # Main menu
+my ($core_num, $cores) = &detect_multi_core;    # Check for single or multi-core machine for BLAST
+&which_genomes;                               # Check which genome folder to use!
+&initial_menu;                                # User input for run number or next
+&run_ID;                                      # Sets run number if none set, sets directory paths
+&menu;                                        # Main menu
 
 # Set where the genome directories can be found.
 sub set_genome_dir {
@@ -78,21 +76,17 @@ sub detect_multi_core {
 
     if ( $os_name eq 'linux' ) {
 
-       # Only tested with Linux (Ubuntu), we can fall back to user entry though.
+        # Only tested with Linux (Ubuntu), we can fall back to user entry though.
 
-        $pprocs =
-          `grep -i "physical id" /proc/cpuinfo | sort -u | wc -l | tr -d '\n'`;
-        $lprocs =
-          `grep -i "processor" /proc/cpuinfo | sort -u | wc -l | tr -d '\n'`;
+        $pprocs = `grep -i "physical id" /proc/cpuinfo | sort -u | wc -l | tr -d '\n'`;
+        $lprocs = `grep -i "processor" /proc/cpuinfo | sort -u | wc -l | tr -d '\n'`;
 
     }
     elsif ( $os_name eq 'darwin' ) {
 
         # Only tested with OSX 10.4+ - will not work with < OSX 10.2
-        $pprocs =
-`system_profiler | grep -i "Number Of Processors:" | tr -d '[aA-zZ]:[[:punct:]]:\n'`;
-        $lprocs =
-`system_profiler | grep -i "Total Number Of Cores:" | tr -d '[aA-zZ]:[[:punct:]]:\n'`;
+        $pprocs = `system_profiler | grep -i "Number Of Processors:" | tr -d '[aA-zZ]:[[:punct:]]:\n'`;
+        $lprocs = `system_profiler | grep -i "Total Number Of Cores:" | tr -d '[aA-zZ]:[[:punct:]]:\n'`;
 
     }
     elsif ( $os_name eq 'MSWin32' ) {
@@ -105,8 +99,7 @@ sub detect_multi_core {
         print "Please enter how many physical processors you have\n>:";
 
         chomp( $pprocs = <STDIN> );
-        print
-"Please enter how many logical processors (dual core = 2 etc) you have\n>:";
+        print "Please enter how many logical processors (dual core = 2 etc) you have\n>:";
         chomp( $lprocs = <STDIN> );
     }
 
@@ -138,20 +131,20 @@ sub run_blast_check {
         print ">:";
         chomp( $blast_choice = <STDIN> );
 
-        switch ($blast_choice) {
+        given ($blast_choice) {
 
-            case /Y/i {
+            when (/Y/i) {
                 print "Blast Detection Overide\n";
                 print `clear`, "\n";
                 $BLAST_BIN_DIR = "/usr/bin/";
             }
-            case /N/i {
+            when (/N/i) {
                 print `clear`, "\n";
                 print
 "Thanks for using fdfBLAST!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
                 exit;
             }
-            else {
+            default {
                 &run_blast_check;
             }
         }
@@ -178,8 +171,7 @@ sub which_genomes {
         print "$i) $folders[$i]\n";
     }
 
-    print
-"Please enter the number for the directory where your genomes are located.\n>:";
+    print "Please enter the number for the directory where your genomes are located.\n>:";
 
     chomp( $menu_choice = <STDIN> );
     if (   $menu_choice > $#folders
@@ -283,68 +275,67 @@ sub menu {
 
     chomp( $menu_choice = <STDIN> );
 
-    switch ($menu_choice) {
+    given ($menu_choice) {
 
-        case "1" {
+        when ("1") {
             &menu_one;
             &return_or_quit;
         }
-        case "2" {
+        when ("2") {
             &menu_two;
             &return_or_quit;
         }
-        case /B/i {
+        when (/B/i) {
             &menu_one;
             &menu_two;
             &return_or_quit;
         }
-        case "3" {
+        when ("3") {
             &menu_three;
             &return_or_quit;
         }
-        case "4" {
+        when ("4") {
             &menu_four;
             &return_or_quit;
         }
 
         # Hidden setting for running Lookup tables only
         # Part of Diagram Step 2. Automatic under option 3)
-        case /L/i {
+        when (/L/i) {
             &menu_l;
             &return_or_quit;
         }
-        case "5" {
+        when ("5") {
             &menu_five;
             &return_or_quit;
         }
 
         # Hidden setting for Duplications - Exeperimental
-        case "6" {
+        when ("6") {
             &menu_six;
             &return_or_quit;
         }
-        case /A/i {
+        when (/A/i) {
             &menu_a;
             &return_or_quit;
         }
-        case /F/i {
+        when (/F/i) {
             &menu_f;
             &return_or_quit;
         }
-        case "8" {
+        when ("8") {
             print `clear`, "\n";
-            print
-"Please indicate your desired run number or enter a new number, 'enter' will generate a ID for you\n";
+            print "Please indicate your desired run number or enter a new number, 'enter' will generate a ID for you\n";
             &run_ID;
             &menu;
         }
-        case /Q/i {
+        when (/Q/i) {
             print `clear`, "\n";
             print
 "Thanks for using fdfBLAST!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
             last;
         }
-        else {
+        default {
             print `clear`, "\n";
             print "*! Wrong Menu Choice - Please Try Again !*\n";
             &menu;
@@ -389,8 +380,7 @@ sub menu_l {
 
 sub menu_four {
     $menu_choice = "Parse Tables";
-    print
-      "Limit by Hit Number? (default: 250, set to 500 for testing dataset)\n";
+    print "Limit by Hit Number? (default: 250, set to 500 for testing dataset)\n";
     $hit_limit = "250";
     print ">:";
     chomp( $hit_limit = <STDIN> );
@@ -421,19 +411,19 @@ sub return_or_quit {
     print "\nReturn to (M)enu or (Q)uit\n";
     print ">:";
     chomp( $menu_choice = <STDIN> );
-    switch ($menu_choice) {
-        case /Q/i {
+    given ($menu_choice) {
+        when (/Q/i) {
             print `clear`, "\n";
             print "Thanks for using fdfBLAST, goodbye!ah right\n";
             print
 "Thanks for using fdfBLAST!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
             last;
         }
-        case /M/i {
+        when (/M/i) {
             print `clear`, "\n";
             &menu;
         }
-        else {
+        default {
             &return_or_quit;
         }
     }
@@ -453,10 +443,7 @@ sub print_time {
         $end_time = scalar localtime(time);
         print $time_fh "   End Time = $end_time\n";
         &dhms;
-        printf $time_fh (
-            " Total Time = %4d days%4d hours%4d minutes%4d seconds\n\n",
-            @parts[ 7, 2, 1, 0 ]
-        );
+        printf $time_fh ( " Total Time = %4d days%4d hours%4d minutes%4d seconds\n\n", @parts[ 7, 2, 1, 0 ] );
         close($time_fh);
     }
 }
@@ -484,10 +471,8 @@ sub dhms {
     my @b = split( /\s+|:/, $beginning );
     my @e = split( /\s+|:/, $end );
 
-    my $b =
-      timelocal( $b[5], $b[4], $b[3], $b[2], $months{ $b[1] } - 1, $b[-1] );
-    my $e =
-      timelocal( $e[5], $e[4], $e[3], $e[2], $months{ $e[1] } - 1, $e[-1] );
+    my $b = timelocal( $b[5], $b[4], $b[3], $b[2], $months{ $b[1] } - 1, $b[-1] );
+    my $e = timelocal( $e[5], $e[4], $e[3], $e[2], $months{ $e[1] } - 1, $e[-1] );
 
     my $elapsed = $e - $b;
 
@@ -508,7 +493,7 @@ sub print_log {
 # Files must have .fas as their extension
 sub get_genomes {
 
-# Assign all files with extension .fas (a small assumption) to the array @file_names
+    # Assign all files with extension .fas (a small assumption) to the array @file_names
     @file_names = glob "$GENOME_DIR/*.fas";
 
     # Loop for all file names in @file_names array
@@ -537,8 +522,7 @@ sub formatdb {
 
         # This line calls the formatdb program within a previously set directory
         # it then outputs the databse genomes files to another directory
-        $results =
-`$BLAST_BIN_DIR/formatdb -t $GENOME_DIR/$file_names[$i] -i $GENOME_DIR/$file_names[$i] -p T -o T`;
+        $results = `$BLAST_BIN_DIR/formatdb -t $GENOME_DIR/$file_names[$i] -i $GENOME_DIR/$file_names[$i] -p T -o T`;
         print " Completed\n";
     }
     print "FORMATDB - Finished...\n\n";
@@ -547,11 +531,10 @@ sub formatdb {
 # This will probably need updating to include the new BLAST+ programs
 sub blastall {
 
-# Create the g2gc output folder, if not then error, quit. This is a little harsh...
+    # Create the g2gc output folder, if not then error, quit. This is a little harsh...
     mkdir( $g2gc_directory, 0777 );
     #####      || die "This procedure has already been run, please refer to you previous run, $run_ID.\n";
-    print
-"Number of\: Genomes = $genome_num\tOutput Files = $genome_num x $genome_num = "
+    print "Number of\: Genomes = $genome_num\tOutput Files = $genome_num x $genome_num = "
       . $genome_num * $genome_num . "\n";
     print "Performing BLASTP\n";
 
@@ -585,7 +568,7 @@ sub get_g2gc_files {
 sub evaluate {
     $value = shift;
 
-# Perl method bstr will only change '1e' not 'e' to decimal, therefore prefix value with '1'
+    # Perl method bstr will only change '1e' not 'e' to decimal, therefore prefix value with '1'
     if ( $value =~ m/^e/ ) {
         $value = "1" . $value;
         $value = Math::BigFloat->bstr($value);
@@ -601,13 +584,12 @@ sub run_gene_hits_helper {
     # Create the gene_hits output folder, if unable then on error, quit.
     # This could probably be handled better - overwrite? sub directory? etc
     mkdir( $gene_hits_directory, 0755 )
-      || die
-"This procedure has already been run, please refer to you previous run , $run_ID.\n";
+      || die "This procedure has already been run, please refer to you previous run , $run_ID.\n";
 
     mkdir( $gene_hits_initial, 0755 );
     print "E Value Upper Limit - e.g 1e-10\n>:";
     chomp( $upper_limit = <STDIN> );
-    if ( $upper_limit == "" ) {
+    if ( $upper_limit eq "" ) {
         $upper_limit = "1e-10";
     }
     &print_log("Gene Hit List E-Value Range\n");
@@ -675,7 +657,7 @@ sub run_gene_hits {
                 }
 
                 $comparison_genome[$x_pos][$y_pos] =
-"$hit_accession,$hit_length,$hit_significance,$percent_identity,$query_range[0],$query_range[1],";
+                  "$hit_accession,$hit_length,$hit_significance,$percent_identity,$query_range[0],$query_range[1],";
                 $y_pos++;
             }
 
@@ -709,8 +691,7 @@ sub run_gene_hits {
 
         for ( $x = 0 ; $x < $query_genome_length ; $x++ ) {
 
-            print $out_fh
-              "$query_genome[$x][2],$query_genome[$x][0],$query_genome[$x][1],";
+            print $out_fh "$query_genome[$x][2],$query_genome[$x][0],$query_genome[$x][1],";
 
             $comparison_genome_length2 = $query_genome[$x][2];
 
@@ -769,8 +750,8 @@ sub generate_lookup_tables {
                 ( $file_j, $dir, $ext ) = fileparse( $file_names[$j], '\..*' );
                 open my $in_fh, "<$gene_hits_initial/$file_i\_$file_j\.csv";
 
-              # We're using while with an iterator instead of foreach to
-              # read in the file line by line adding each column to the 2d array
+                # We're using while with an iterator instead of foreach to
+                # read in the file line by line adding each column to the 2d array
                 $x = 0;
                 while (<$in_fh>) {
                     my ($line) = $_;
@@ -793,13 +774,12 @@ sub generate_lookup_tables {
                 push( @check_for_zero, $total_in_array_column );
                 $total_of_array_columns += $_ for @check_for_zero;
                 if ( $total_of_array_columns == 0 ) {
-                    print
-"\nThere are no hits at all, please try some different e-values...\n";
+                    print "\nThere are no hits at all, please try some different e-values...\n";
                     last;
                 }
                 ###
             }    # End second (internal) for loop
-            close($in_fh);
+            ##close($in_fh);
             open my $out_fh, ">$gene_hits_lookup/$file_i\.csv";
 
             # Here we use two for loops to iterate through the 2D array
@@ -833,7 +813,7 @@ sub generate_lookup_tables {
             undef(@AoA);
             print ".";
         }
-        close($out_fh);
+        ##close($out_fh);
     }
     print "\n";
 }
@@ -872,8 +852,8 @@ sub differential_new {
         #####
         for ( $i = 0 ; $i < $lookup_number ; $i++ ) {
 
-# An option to include self-genome comparison could go here, e.g. Genome A to Genome A
-# currently they are excluded...not useful for synapomorphy analysis!
+            # An option to include self-genome comparison could go here, e.g. Genome A to Genome A
+            # currently they are excluded...not useful for synapomorphy analysis!
             if ( $k != $i ) {
 
                 # This is where the main comparisons occur
@@ -886,8 +866,7 @@ sub differential_new {
                 #####
                 print "Processing\t$file_k\tand\t$file_i\n";
                 #####
-                &comparison( $lookup_filenames[$k], $lookup_filenames[$i], $k,
-                    $i, $lookup_filenames[$k] );
+                &comparison( $lookup_filenames[$k], $lookup_filenames[$i], $k, $i, $lookup_filenames[$k] );
             }
         }
     }
@@ -937,23 +916,19 @@ sub comparison {
             #####
             &get_hit_info( $ifile, $jfile, $line_number, "0" );
             #####
-            print
-" hits S\_$return_array[0],$return_array[1],$return_array[2],$return_array[3]\n"
+            print " hits S\_$return_array[0],$return_array[1],$return_array[2],$return_array[3]\n"
               if $verbose == 1;
             #####
-            &scan_subject_initial( $accession_array[0], $ifile, $jfile,
-                $return_array[0], "0" );
+            &scan_subject_initial( $accession_array[0], $ifile, $jfile, $return_array[0], "0" );
             #####
             print "NStatus = $scan_array[0]\n\n" if $verbose == 1;
             #####
 
             if ( $scan_array[0] eq "recip" ) {
 
-                open my $non_diff_fh,
-                  ">>$gene_hits_duplications/duplications_$kfile";
+                open my $non_diff_fh, ">>$gene_hits_duplications/duplications_$kfile";
 
-                &get_line_number_start(
-                    "$gene_hits_duplications/duplications_$kfile");
+                &get_line_number_start("$gene_hits_duplications/duplications_$kfile");
 
                 print $non_diff_fh
 "$last_line_number;$accession_array[0];$accession_array[1];$return_array[0];$return_array[1];$return_array[2];$return_array[3]\n";
@@ -975,12 +950,10 @@ sub comparison {
                 #####
                 &get_hit_info( $ifile, $jfile, $line_number, $n );
                 #####
-                print
-" hits S\_$return_array[0],$return_array[1],$return_array[2],$return_array[3]\n"
+                print " hits S\_$return_array[0],$return_array[1],$return_array[2],$return_array[3]\n"
                   if $verbose == 1;
                 #####
-                &scan_subject_initial( $accession_array[0], $ifile, $jfile,
-                    $return_array[0], $n );
+                &scan_subject_initial( $accession_array[0], $ifile, $jfile, $return_array[0], $n );
 
                 #####
                 print "Status = $scan_array[0]\n\n" if $verbose == 2;
@@ -988,11 +961,9 @@ sub comparison {
 
                 if ( $scan_array[0] eq "recip" ) {
 
-                    open my $differentials_fh,
-                      ">>$gene_hits_differentials/differentials_$kfile";
+                    open my $differentials_fh, ">>$gene_hits_differentials/differentials_$kfile";
 
-                    &get_line_number_start(
-                        "$gene_hits_differentials/differentials_$kfile");
+                    &get_line_number_start("$gene_hits_differentials/differentials_$kfile");
 
                     if ( $last_accession eq $accession_array[0] ) {
                         $last_line_number = $last_line_number + 1;
@@ -1008,7 +979,7 @@ sub comparison {
         }    #endelsif
 
     }    #endfor
-    #print $non_diff_fh "\n";
+         #print $non_diff_fh "\n";
 }
 
 sub remove_single_recips {
@@ -1098,11 +1069,10 @@ sub fusion_scan {
                 $subject_evalue          = $array_line[5];
                 $subject_hit_range_start = $array_line[7];
                 $subject_hit_range_end   = $array_line[8];
-                $match_length =
-                  $subject_hit_range_end - $subject_hit_range_start;
+                $match_length            = $subject_hit_range_end - $subject_hit_range_start;
                 push( @subject_hits,
-"$subject_accession,$subject_hit_range_start,$subject_hit_range_end,$subject_length"
-                ) if $match_length > 50 && $subject_length > 50;
+                    "$subject_accession,$subject_hit_range_start,$subject_hit_range_end,$subject_length" )
+                  if $match_length > 50 && $subject_length > 50;
                 #####
                 print "\nQ $query_accession -> $subject_accession\n"
                   if $verbose == 1;
@@ -1123,13 +1093,11 @@ sub fusion_scan {
                         $next_subject_hit_range_start = $next_array_line[7];
                         $next_subject_hit_range_end   = $next_array_line[8];
 
-             # > 50 should be user selectable limit for now it is hard-coded
-             # to exclude all sequences with <=50 bases.
-             # Another limit is Matched Length (end - start) this should also be
-             # more than 50.
-                        $next_match_length =
-                          $next_subject_hit_range_end -
-                          $next_subject_hit_range_start;
+                        # > 50 should be user selectable limit for now it is hard-coded
+                        # to exclude all sequences with <=50 bases.
+                        # Another limit is Matched Length (end - start) this should also be
+                        # more than 50.
+                        $next_match_length = $next_subject_hit_range_end - $next_subject_hit_range_start;
 
                         if (   $next_line_number ne 0
                             && $query_accession eq $next_query_accession
@@ -1282,12 +1250,8 @@ sub left_and_right {
 
             if ( $ratio >= $lower_ratio && $ratio <= $higher_ratio ) {
                 undef(@subject_hits);
-                push( @subject_hits,
-"$unfused_one[0],$unfused_one[1],$unfused_one[2],$unfused_one[3]"
-                );
-                push( @subject_hits,
-"$unfused_two[0],$unfused_two[1],$unfused_two[2],$unfused_two[3]"
-                );
+                push( @subject_hits, "$unfused_one[0],$unfused_one[1],$unfused_one[2],$unfused_one[3]" );
+                push( @subject_hits, "$unfused_two[0],$unfused_two[1],$unfused_two[2],$unfused_two[3]" );
                 $subject_hit_length = @subject_hits;
                 &generate_image;
             }
@@ -1310,15 +1274,13 @@ sub ignore_orthologues {
 
             #$continue = "yes";
             push( @cont, "yes" );
-            print
-"\t\t$unfused_middles[0] - $middle_length / $query_length = $length_ratio - yes\n"
+            print "\t\t$unfused_middles[0] - $middle_length / $query_length = $length_ratio - yes\n"
               if $verbose == 1;
         }
         elsif ( $length_ratio > "0.95" ) {
 
             push( @cont, "no" );
-            print
-"\t\t$unfused_middles[0] - $middle_length / $query_length = $length_ratio - no\n"
+            print "\t\t$unfused_middles[0] - $middle_length / $query_length = $length_ratio - no\n"
               if $verbose == 1;
         }
 
@@ -1362,12 +1324,8 @@ sub middle_and_left {
                   if $verbose == 1;
                 if ( $ratio >= $lower_ratio && $ratio <= $higher_ratio ) {
                     undef(@subject_hits);
-                    push( @subject_hits,
-"$unfused_one[0],$unfused_one[1],$unfused_one[2],$unfused_one[3]"
-                    );
-                    push( @subject_hits,
-"$unfused_two[0],$unfused_two[1],$unfused_two[2],$unfused_two[3]"
-                    );
+                    push( @subject_hits, "$unfused_one[0],$unfused_one[1],$unfused_one[2],$unfused_one[3]" );
+                    push( @subject_hits, "$unfused_two[0],$unfused_two[1],$unfused_two[2],$unfused_two[3]" );
                     $subject_hit_length = @subject_hits;
                     &generate_image;
                 }
@@ -1404,12 +1362,8 @@ sub middle_and_right {
                   if $verbose == 1;
                 if ( $ratio >= $lower_ratio && $ratio <= $higher_ratio ) {
                     undef(@subject_hits);
-                    push( @subject_hits,
-"$unfused_one[0],$unfused_one[1],$unfused_one[2],$unfused_one[3]"
-                    );
-                    push( @subject_hits,
-"$unfused_two[0],$unfused_two[1],$unfused_two[2],$unfused_two[3]"
-                    );
+                    push( @subject_hits, "$unfused_one[0],$unfused_one[1],$unfused_one[2],$unfused_one[3]" );
+                    push( @subject_hits, "$unfused_two[0],$unfused_two[1],$unfused_two[2],$unfused_two[3]" );
                     $subject_hit_length = @subject_hits;
                     &generate_image;
                 }
@@ -1488,8 +1442,7 @@ sub generate_image {
     $end            = 0;
 
     # create a new image
-    $im = new GD::Image( $image_length, $image_height, 1 )
-      ;    # Not paletted - allows for alpha transparency of domains
+    $im = new GD::Image( $image_length, $image_height, 1 );    # Not paletted - allows for alpha transparency of domains
 
     # allocate some specific colors
     $white = $im->colorAllocate( 255, 255, 255 );
@@ -1498,7 +1451,7 @@ sub generate_image {
     $blue  = $im->colorAllocate( 0,   21,  181 );
 
     # make the background non-transparent and interlaced
-    $im->transparent(-1);    # no transparency
+    $im->transparent(-1);                                      # no transparency
     $im->interlaced('true');
     $im->alphaBlending(1);
 
@@ -1529,16 +1482,14 @@ sub generate_image {
         $ratio_dir = "$query_accession_dir/$ratio";
         if ( -e $ratio_dir && -d $ratio_dir ) {
 
-            open my $out_fh, '>',
-"$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
+            open my $out_fh, '>', "$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
             binmode $out_fh;
             print $out_fh $im->png(9);
             close($out_fh);
         }
         else {
             mkdir( $ratio_dir, 0755 );
-            open $out_fh, '>',
-"$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
+            open $out_fh, '>', "$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
             binmode $out_fh;
             print $out_fh $im->png(9);
             close($out_fh);
@@ -1550,16 +1501,14 @@ sub generate_image {
         $ratio_dir = "$query_accession_dir/$ratio";
         if ( -e $ratio_dir && -d $ratio_dir ) {
 
-            open $out_fh, '>',
-"$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
+            open $out_fh, '>', "$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
             binmode $out_fh;
             print $out_fh $im->png(9);
             close($out_fh);
         }
         else {
             mkdir( $ratio_dir, 0755 );
-            open $out_fh, '>',
-"$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
+            open $out_fh, '>', "$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
             binmode $out_fh;
             print $out_fh $im->png(9);
             close($out_fh);
@@ -1655,11 +1604,9 @@ sub draw_domain {
                 $domain_start = $temp[$var];
                 $domain_end   = $temp[ $var + 1 ];
                 $domain_type  = $temp[ $var + 2 ];
-                chomp($domain_type)
-                  ;    # Remove end of line, causing last domain to be ignored.
+                chomp($domain_type);    # Remove end of line, causing last domain to be ignored.
 
-                print
-"\t$#temp2 - $j - $domain\t$domain_start\t$domain_end\t$domain_type\n";
+                print "\t$#temp2 - $j - $domain\t$domain_start\t$domain_end\t$domain_type\n";
 
                 &domain_colour($domain);
                 if ( $domain_type eq ".." ) {
@@ -1727,20 +1674,12 @@ sub domain_start_open {
 sub domain_end_closed {
 
     $im->setAntiAliased($dom_colour);
-    $im->filledArc(
-        $left_pos + $domain_end - 13,
-        $bar_vpos + 2,
-        13, 13, 270, 90, $dom_colour, gdArc
-    );
+    $im->filledArc( $left_pos + $domain_end - 13, $bar_vpos + 2, 13, 13, 270, 90, $dom_colour, gdArc );
 }
 
 sub domain_start_closed {
 
-    $im->filledArc(
-        $left_pos + $domain_start + 14,
-        $bar_vpos + 2,
-        13, 13, 90, 270, $dom_colour, gdArc
-    );
+    $im->filledArc( $left_pos + $domain_start + 14, $bar_vpos + 2, 13, 13, 90, 270, $dom_colour, gdArc );
     $im->setAntiAliased($dom_colour);
 }
 
@@ -1755,21 +1694,14 @@ sub domain_middle {
     $dark_grey = $im->colorAllocate( 83, 83, 83 );
     if ( $domain_name_length < ( $domain_end - $domain_start ) ) {
         $im->string( gdSmallFont,
-            $left_pos +
-              $domain_start +
-              ( ( ( $domain_end - $domain_start ) / 2 ) - $domain_name_length )
-              - 1,
+            $left_pos + $domain_start + ( ( ( $domain_end - $domain_start ) / 2 ) - $domain_name_length ) - 1,
             $bar_vpos - 4 - 1,
-            "$domain",
-            $dark_grey
+            "$domain", $dark_grey
         );    # shadow
         $im->string( gdSmallFont,
-            $left_pos +
-              $domain_start +
-              ( ( ( $domain_end - $domain_start ) / 2 ) - $domain_name_length ),
+            $left_pos + $domain_start + ( ( ( $domain_end - $domain_start ) / 2 ) - $domain_name_length ),
             $bar_vpos - 4,
-            "$domain",
-            $white
+            "$domain", $white
         );
     }
 }
@@ -1800,14 +1732,8 @@ sub scale_bars {
     #Large Scale Bars
     for ( $a = 0 ; $a <= $scale_quotient ; $a++ ) {
         $scale = $a * 100;
-        $im->string( gdSmallFont, $scale + $left_pos,
-            $font_vpos, "$scale", $black );
-        $im->rectangle(
-            $scale + $left_pos,
-            $bar_vpos - 5,
-            $scale + $left_pos + 1,
-            $bar_vpos - 1, $black
-        );
+        $im->string( gdSmallFont, $scale + $left_pos, $font_vpos, "$scale", $black );
+        $im->rectangle( $scale + $left_pos, $bar_vpos - 5, $scale + $left_pos + 1, $bar_vpos - 1, $black );
     }
 }
 
@@ -1817,61 +1743,33 @@ sub length_bars {
 
     # Start
     $im->string( gdSmallFont, $left_pos, $font_vpos + 30, "$start", $red );
-    $im->rectangle(
-        $left_pos,
-        $bar_vpos + 6,
-        $left_pos + 1,
-        $bar_vpos + 10, $red
-    );
+    $im->rectangle( $left_pos, $bar_vpos + 6, $left_pos + 1, $bar_vpos + 10, $red );
 
     #End
-    $im->string( gdSmallFont, $end_padded, $font_vpos + 30, "$end_scale",
-        $red );
-    $im->rectangle(
-        $end_padded - 1,
-        $bar_vpos + 6,
-        $end_padded, $bar_vpos + 10, $red
-    );
+    $im->string( gdSmallFont, $end_padded, $font_vpos + 30, "$end_scale", $red );
+    $im->rectangle( $end_padded - 1, $bar_vpos + 6, $end_padded, $bar_vpos + 10, $red );
 
-#Length End
-#$im->string( gdSmallFont, $end_padded, $font_vpos, "$bar_length", $black );
-#$im->rectangle( $end_padded - 1, $bar_vpos - 5, $end_padded, $bar_vpos - 1, $black );
+    #Length End
+    #$im->string( gdSmallFont, $end_padded, $font_vpos, "$bar_length", $black );
+    #$im->rectangle( $end_padded - 1, $bar_vpos - 5, $end_padded, $bar_vpos - 1, $black );
 
 }
 
 sub bar {
     $colour = shift;
-    $im->filledRectangle(
-        $left_pos, $bar_vpos,
-        $bar_length + $left_pos,
-        $bar_vpos + 5, $colour
-    );
+    $im->filledRectangle( $left_pos, $bar_vpos, $bar_length + $left_pos, $bar_vpos + 5, $colour );
 }
 
 sub accession_name {
     my $colour = shift;
     if ( $actual_length == "" ) {
-        $im->string( gdSmallFont, $padding_left - 50,
-            $accession_vpos, "$accession", $colour );
-        $im->string( gdTinyFont,
-            $padding_left - 50,
-            $accession_vpos + 12,
-            "L=$bar_length", $colour
-        );
+        $im->string( gdSmallFont, $padding_left - 50, $accession_vpos,      "$accession",    $colour );
+        $im->string( gdTinyFont,  $padding_left - 50, $accession_vpos + 12, "L=$bar_length", $colour );
     }
     else {
-        $im->string( gdSmallFont, $padding_left - 50,
-            $accession_vpos, "$accession", $colour );
-        $im->string( gdTinyFont,
-            $padding_left - 50,
-            $accession_vpos + 20,
-            "ML=$bar_length", $colour
-        );
-        $im->string( gdTinyFont,
-            $padding_left - 50,
-            $accession_vpos + 12,
-            "L =$actual_length", $colour
-        );
+        $im->string( gdSmallFont, $padding_left - 50, $accession_vpos,      "$accession",        $colour );
+        $im->string( gdTinyFont,  $padding_left - 50, $accession_vpos + 20, "ML=$bar_length",    $colour );
+        $im->string( gdTinyFont,  $padding_left - 50, $accession_vpos + 12, "L =$actual_length", $colour );
     }
 }
 
@@ -1894,52 +1792,17 @@ sub watermark {
 
     $fdfBLAST = "fdfBLAST v$VERSION";
 
-    $im->string( gdSmallFont,
-        $image_length - 100,
-        $logo_left_y + 7,
-        "$fdfBLAST", $light_grey
-    );
+    $im->string( gdSmallFont, $image_length - 100, $logo_left_y + 7, "$fdfBLAST", $light_grey );
 
-    $im->string( gdSmallFont,
-        $image_length - 180,
-        $logo_left_y + 7,
-        "Ratio = $ratio", $light_grey
-    );
+    $im->string( gdSmallFont, $image_length - 180, $logo_left_y + 7, "Ratio = $ratio", $light_grey );
 
-    $im->string( gdTinyFont,
-        $image_length - 425,
-        $logo_left_y + 10,
-        "Length Match %", $light_grey
-    );
+    $im->string( gdTinyFont, $image_length - 425, $logo_left_y + 10, "Length Match %", $light_grey );
 
-    $im->filledRectangle(
-        $image_length - 350,
-        $logo_left_y + 10,
-        $image_length - 320,
-        $logo_left_y + 17,
-        $darker_grey
-    );
-    $im->filledRectangle(
-        $image_length - 320,
-        $logo_left_y + 10,
-        $image_length - 290,
-        $logo_left_y + 17,
-        $darker_red
-    );
-    $im->filledRectangle(
-        $image_length - 290,
-        $logo_left_y + 10,
-        $image_length - 260,
-        $logo_left_y + 17,
-        $purple
-    );
-    $im->filledRectangle(
-        $image_length - 260,
-        $logo_left_y + 10,
-        $image_length - 230,
-        $logo_left_y + 17,
-        $dark_blue
-    );
+    $im->filledRectangle( $image_length - 350, $logo_left_y + 10, $image_length - 320, $logo_left_y + 17,
+        $darker_grey );
+    $im->filledRectangle( $image_length - 320, $logo_left_y + 10, $image_length - 290, $logo_left_y + 17, $darker_red );
+    $im->filledRectangle( $image_length - 290, $logo_left_y + 10, $image_length - 260, $logo_left_y + 17, $purple );
+    $im->filledRectangle( $image_length - 260, $logo_left_y + 10, $image_length - 230, $logo_left_y + 17, $dark_blue );
     $im->filledRectangle(
         $image_length - 230,
         $logo_left_y + 10,
@@ -1947,43 +1810,14 @@ sub watermark {
         $logo_left_y + 17,
         $darker_green
     );
-    $im->filledRectangle(
-        $image_length - 200,
-        $logo_left_y + 10,
-        $image_length - 190,
-        $logo_left_y + 17, $pink
-    );
+    $im->filledRectangle( $image_length - 200, $logo_left_y + 10, $image_length - 190, $logo_left_y + 17, $pink );
 
-    $im->string( gdTinyFont,
-        $image_length - 343,
-        $logo_left_y + 10,
-        "<40", $light_grey
-    );
-    $im->string( gdTinyFont,
-        $image_length - 317,
-        $logo_left_y + 10,
-        "40-60", $light_grey
-    );
-    $im->string( gdTinyFont,
-        $image_length - 287,
-        $logo_left_y + 10,
-        "60-70", $light_grey
-    );
-    $im->string( gdTinyFont,
-        $image_length - 257,
-        $logo_left_y + 10,
-        "70-80", $light_grey
-    );
-    $im->string( gdTinyFont,
-        $image_length - 229,
-        $logo_left_y + 10,
-        "80-100", $light_grey
-    );
-    $im->string( gdTinyFont,
-        $image_length - 197,
-        $logo_left_y + 10,
-        "!", $light_grey
-    );
+    $im->string( gdTinyFont, $image_length - 343, $logo_left_y + 10, "<40",    $light_grey );
+    $im->string( gdTinyFont, $image_length - 317, $logo_left_y + 10, "40-60",  $light_grey );
+    $im->string( gdTinyFont, $image_length - 287, $logo_left_y + 10, "60-70",  $light_grey );
+    $im->string( gdTinyFont, $image_length - 257, $logo_left_y + 10, "70-80",  $light_grey );
+    $im->string( gdTinyFont, $image_length - 229, $logo_left_y + 10, "80-100", $light_grey );
+    $im->string( gdTinyFont, $image_length - 197, $logo_left_y + 10, "!",      $light_grey );
 }
 
 sub get_colour {
@@ -2104,18 +1938,15 @@ sub duplication_scan {
                 #####
                 if ( $query_gene eq $query_count ) {
                     $count++;
-                    push( @subject,
-"$subject_gene,$subject_length,$subject_evalue,$subject_ident,"
-                    );
+                    push( @subject, "$subject_gene,$subject_length,$subject_evalue,$subject_ident," );
                 }
             }
             $output_file = fileparse( $duplication_filenames[$i] );
             #####
-#print "Output to $gene_hits_duplications/$count\_hits_$output_file\n" if $verbose == 1;
+            #print "Output to $gene_hits_duplications/$count\_hits_$output_file\n" if $verbose == 1;
             #####
             $hits = $count + 1;
-            open my $output_fh,
-              ">>$gene_hits_duplications/$hits\_hits_$output_file";
+            open my $output_fh, ">>$gene_hits_duplications/$hits\_hits_$output_file";
             print $output_fh "$query_gene,$query_length,";
             foreach my $value (@subject) {
                 print $output_fh "$value";
@@ -2173,8 +2004,7 @@ sub scan_subject_initial {
                 $loop_position = $r + 1;
                 $location      = ( 6 * $loop_position ) - 3;
                 #####
-                print
-                  "Loc = $location\tQH = $query_hits \<\-\> $temp[$location]\n"
+                print "Loc = $location\tQH = $query_hits \<\-\> $temp[$location]\n"
                   if $verbose == 1;
                 #####
                 if ( $query_hits eq $temp[$location] ) {
@@ -2248,7 +2078,7 @@ sub get_accession {
 
     open my $access_fh, "<$gene_hits_initial\/$init_file\_$init_file_two\.csv";
     #####
-# print "Opening $gene_hits_initial\/$init_file\_$init_file_two\.txt\n" if $verbose == 1;
+    # print "Opening $gene_hits_initial\/$init_file\_$init_file_two\.txt\n" if $verbose == 1;
     #####
 
     # While file, read each line and compare line numbers
