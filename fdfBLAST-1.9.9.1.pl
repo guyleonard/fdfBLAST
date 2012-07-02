@@ -1,11 +1,17 @@
 #!/usr/bin/perl
-###########################################
-# fdfBLAST June 2012                      #
-# Full public release			  #
-# Internal version based on 1.9.9.2	  #
-$VERSION = "1.2012.beta";    #
-###########################################
+#######
+# $URL: https://github.com/guyleonard/fdfBLAST $
+# $Date: 2012-07-02 $
+# $Author: Guy Leonard $
+# $Revision: 1 $
+#######
+# fdfBLAST June 2012 - Full Public Release
+# fdfBLAST June 2012 - Based on Internal v1.9.9.2
+#######
 ##use warnings;
+##use strict;
+our ($VERSION) = '1.20120702';
+
 
 # Import Modules
 use Bio::SearchIO;           # Bioperl for input/output/persing of BLAST etc
@@ -15,7 +21,6 @@ use GD;                      # Creates PNG images
 
 # use GD::SVG;	             # Creates SVG images - uncomment if you want SVG output
 use Math::BigFloat;          # Arbitrary size floating point math package (handles e-values)
-# use Switch;                  # A given statement for Perl - deprecated, consider given to given/when
 use feature qw(switch);      # This is the given replacement of deprecated switch statement
 use Time::Local;             # For time elapsed when running different stages
 
@@ -28,12 +33,12 @@ our $EMPTY = q{};
 
 # Run these subroutines first...
 #&run_blast_check;                            # Check for BLAST - You really should just have this installed.
-our $GENOME_DIR = &set_genome_dir;    # Set where to look for genome directories
-my ($core_num, $cores) = &detect_multi_core;    # Check for single or multi-core machine for BLAST
-&which_genomes;                               # Check which genome folder to use!
-&initial_menu;                                # User input for run number or next
-&run_ID;                                      # Sets run number if none set, sets directory paths
-&menu;                                        # Main menu
+our $GENOME_DIR = set_genome_dir();           # Set where to look for genome directories
+my ($core_num, $cores) = detect_multi_core();  # Check for single or multi-core machine for BLAST
+which_genomes();                               # Check which genome folder to use!
+initial_menu();                                # User input for run number or next
+run_ID();                                      # Sets run number if none set, sets directory paths
+menu();                                        # Main menu
 
 # Set where the genome directories can be found.
 sub set_genome_dir {
@@ -44,12 +49,13 @@ sub set_genome_dir {
     ######
     my $genome_directory = $EMPTY;
     print "Genomes Directory Menu\n**********************\n";
-    for ( my $i = 0 ; $i <= $#genome_directories ; $i++ ) {
-        print "$i) $genome_directories[$i]\n";
+    #for ( my $i = 0 ; $i <= $#genome_directories ; $i++ ) {
+    for (0..$genome_directories) {
+        print "$_) $genome_directories[$_]\n";
     }
     print "O) Other?\nChoose Genome Directory?\n>:";
     chomp( my $menu_choice = <ARGV> );
-    if ( $menu_choice =~ m/O/is ) {
+    if ( $menu_choice =~ m/O/ism ) {
         print "Please enter the location of your genome directory\n>:";
         chomp( $genome_directory = <ARGV> );
         if ( -e $genome_directory && -d $genome_directory ) {
@@ -57,13 +63,13 @@ sub set_genome_dir {
             # Do nothing
         }
         else {
-            &set_genome_dir;
+            set_genome_dir();
         }
     }
     else {
         $genome_directory = "$genome_directories[$menu_choice]";
     }
-    print "\nYou chose $genome_directory\n";
+    #print "\nYou chose $genome_directory\n";
     return $genome_directory;
 }
 
@@ -133,19 +139,19 @@ sub run_blast_check {
 
         given ($blast_choice) {
 
-            when (/Y/i) {
+            when (/Y/ism) {
                 print "Blast Detection Overide\n";
                 print `clear`, "\n";
                 $BLAST_BIN_DIR = "/usr/bin/";
             }
-            when (/N/i) {
+            when (/N/ism) {
                 print `clear`, "\n";
                 print
 "Thanks for using fdfBLAST!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
                 exit;
             }
             default {
-                &run_blast_check;
+                run_blast_check();
             }
         }
     }
@@ -167,8 +173,8 @@ sub which_genomes {
 
     print "Genome Set Menu\n";
     print "***************\n";
-    for ( $i = 0 ; $i <= $#folders ; $i++ ) {
-        print "$i) $folders[$i]\n";
+    for (0..$#folders) {
+        print "$_) $folders[$_]\n";
     }
 
     print "Please enter the number for the directory where your genomes are located.\n>:";
@@ -176,7 +182,7 @@ sub which_genomes {
     chomp( $menu_choice = <ARGV> );
     if (   $menu_choice > $#folders
         || $menu_choice lt '0'
-        || $menu_choice == m/[aA-zZ]/ )
+        || $menu_choice == m/[aA-zZ]/sm )
     {
         print `clear`, "\n";
         print "\nIncorrect Menu Choice!\n\n";
@@ -204,7 +210,7 @@ sub initial_menu {
 sub run_ID {
     print ">:";
     chomp( $run_ID = <ARGV> );
-    if ( $run_ID eq "" ) {
+    if ( $run_ID eq $EMPTY ) {
         $run_ID = time();
         print "Your ID is now: $run_ID\n";
     }
@@ -278,58 +284,58 @@ sub menu {
     given ($menu_choice) {
 
         when ("1") {
-            &menu_one;
-            &return_or_quit;
+            menu_one();
+            return_or_quit();
         }
         when ("2") {
-            &menu_two;
-            &return_or_quit;
+            menu_two();
+            return_or_quit();
         }
-        when (/B/i) {
-            &menu_one;
-            &menu_two;
-            &return_or_quit;
+        when (/B/ism) {
+            menu_one();
+            menu_two();
+            return_or_quit();
         }
         when ("3") {
-            &menu_three;
-            &return_or_quit;
+            menu_three();
+            return_or_quit();
         }
         when ("4") {
-            &menu_four;
-            &return_or_quit;
+            menu_four();
+            return_or_quit();
         }
 
         # Hidden setting for running Lookup tables only
         # Part of Diagram Step 2. Automatic under option 3)
-        when (/L/i) {
-            &menu_l;
-            &return_or_quit;
+        when (/L/ism) {
+            menu_l();
+            return_or_quit();
         }
         when ("5") {
-            &menu_five;
-            &return_or_quit;
+            menu_five();
+            return_or_quit();
         }
 
         # Hidden setting for Duplications - Exeperimental
         when ("6") {
-            &menu_six;
-            &return_or_quit;
+            menu_six();
+            return_or_quit();
         }
-        when (/A/i) {
-            &menu_a;
-            &return_or_quit;
+        when (/A/ism) {
+            menu_a();
+            return_or_quit();
         }
-        when (/F/i) {
-            &menu_f;
-            &return_or_quit;
+        when (/F/ism) {
+            menu_f();
+            return_or_quit();
         }
         when ("8") {
             print `clear`, "\n";
             print "Please indicate your desired run number or enter a new number, 'enter' will generate a ID for you\n";
-            &run_ID;
-            &menu;
+            run_ID();
+            menu();
         }
-        when (/Q/i) {
+        when (/Q/ism) {
             print `clear`, "\n";
             print
 "Thanks for using fdfBLAST!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
@@ -337,44 +343,44 @@ sub menu {
         default {
             print `clear`, "\n";
             print "*! Wrong Menu Choice - Please Try Again !*\n";
-            &menu;
+            menu();
         }
     }
 }
 
 sub menu_one {
     $menu_choice = "FormatDB";
-    &print_time("start");
-    &get_genomes;
-    &formatdb;
-    &print_time("end");
+    print_time("start");
+    get_genomes();
+    formatdb();
+    print_time("end");
 }
 
 sub menu_two {
     $menu_choice = "BlastAll";
-    &print_time("start");
-    &get_genomes;
-    &blastall;
-    &print_time("end");
+    print_time("start");
+    get_genomes();
+    blastall();
+    print_time("end");
 }
 
 sub menu_three {
     $menu_choice = "Extract Gene Hit Lists";
-    &print_time("start");
-    &get_genomes;
-    &get_g2gc_files;
-    &run_gene_hits_helper;
-    &run_gene_hits;
-    &generate_lookup_tables;
-    &print_time("end");
+    print_time("start");
+    get_genomes();
+    get_g2gc_files();
+    run_gene_hits_helper();
+    run_gene_hits();
+    generate_lookup_tables();
+    print_time("end");
 }
 
 sub menu_l {
     $menu_choice = "Lookup Tables";
-    &print_time("start");
-    &get_genomes;
-    &generate_lookup_tables;
-    &print_time("end");
+    print_time("start");
+    get_genomes();
+    generate_lookup_tables();
+    print_time("end");
 }
 
 sub menu_four {
@@ -383,27 +389,27 @@ sub menu_four {
     $hit_limit = "250";
     print ">:";
     chomp( $hit_limit = <ARGV> );
-    &print_time("start");
-    &get_genomes;
-    &differential_new;
-    &print_time("end");
+    print_time("start");
+    get_genomes();
+    differential_new();
+    print_time("end");
 }
 
 sub menu_five {
     $menu_choice = "Identify Fusions";
-    &print_time("start");
-    &parse_lookup;
-    &read_domain_file;
-    &fusion_scan;
-    &print_time("end");
+    print_time("start");
+    parse_lookup();
+    read_domain_file();
+    fusion_scan();
+    print_time("end");
 }
 
 # Currently Hidden Menu - Experimental.
 sub menu_six {
     $menu_choice = "Identify Duplications";
-    &print_time("start");
-    &duplication_scan;
-    &print_time("end");
+    print_time("start");
+    duplication_scan();
+    print_time("end");
 }
 
 sub return_or_quit {
@@ -417,10 +423,10 @@ sub return_or_quit {
         }
         when (/M/i) {
             print `clear`, "\n";
-            &menu;
+            menu();
         }
         default {
-            &return_or_quit;
+            return_or_quit();
         }
     }
 }
@@ -464,8 +470,8 @@ sub dhms {
     my $beginning = $start_time;
     my $end       = $end_time;
 
-    my @b = split( /\s+|:/, $beginning );
-    my @e = split( /\s+|:/, $end );
+    my @b = split( /\s+|:/sm, $beginning );
+    my @e = split( /\s+|:/sm, $end );
 
     my $b = timelocal( $b[5], $b[4], $b[3], $b[2], $months{ $b[1] } - 1, $b[-1] );
     my $e = timelocal( $e[5], $e[4], $e[3], $e[2], $months{ $e[1] } - 1, $e[-1] );
@@ -514,12 +520,12 @@ sub formatdb {
 
     # For loop, $i up to number of genomes do
 
-    for ( my $i = 0 ; $i < $genome_num ; $i++ ) {
+    for (0..$genome_num) {
         print "$file_names[$i] \x3E\x3E\x3E";
 
         # This line calls the formatdb program within a previously set directory
         # it then outputs the databse genomes files to another directory
-        $results = `$BLAST_BIN_DIR/formatdb -t $GENOME_DIR/$file_names[$i] -i $GENOME_DIR/$file_names[$i] -p T -o T`;
+        $results = `$BLAST_BIN_DIR/formatdb -t $GENOME_DIR/$file_names[$_] -i $GENOME_DIR/$file_names[$_] -p T -o T`;
         print " Completed\n";
     }
     print "FORMATDB - Finished...\n\n";
