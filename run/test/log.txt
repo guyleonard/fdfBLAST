@@ -1,6 +1,0 @@
-Gene Hit List E-Value Range
-Upper Value = 1e-10
-Lower Value = 0
-Upper Value = 0.0000000001
-Lower Value = 0
-
