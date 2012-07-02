@@ -13,10 +13,10 @@ use Cwd;                     # Gets pathname of current working directory
 use File::Basename;          # Remove path information and extract 8.3 filenames
 use GD;                      # Creates PNG images
 
-# use GD::SVG;	       # Creates SVG images - uncomment if you want SVG output
+# use GD::SVG;	             # Creates SVG images - uncomment if you want SVG output
 use Math::BigFloat;          # Arbitrary size floating point math package (handles e-values)
-use Switch;                  # A given statement for Perl - deprecated, consider given to given/when
-use feature qw(switch);      # This is the given replacement
+# use Switch;                  # A given statement for Perl - deprecated, consider given to given/when
+use feature qw(switch);      # This is the given replacement of deprecated switch statement
 use Time::Local;             # For time elapsed when running different stages
 
 # Global Directory Information
@@ -48,10 +48,10 @@ sub set_genome_dir {
         print "$i) $genome_directories[$i]\n";
     }
     print "O) Other?\nChoose Genome Directory?\n>:";
-    chomp( my $menu_choice = <STDIN> );
+    chomp( my $menu_choice = <ARGV> );
     if ( $menu_choice =~ m/O/is ) {
         print "Please enter the location of your genome directory\n>:";
-        chomp( $genome_directory = <STDIN> );
+        chomp( $genome_directory = <ARGV> );
         if ( -e $genome_directory && -d $genome_directory ) {
 
             # Do nothing
@@ -98,9 +98,9 @@ sub detect_multi_core {
 
         print "Please enter how many physical processors you have\n>:";
 
-        chomp( $pprocs = <STDIN> );
+        chomp( $pprocs = <ARGV> );
         print "Please enter how many logical processors (dual core = 2 etc) you have\n>:";
-        chomp( $lprocs = <STDIN> );
+        chomp( $lprocs = <ARGV> );
     }
 
     if ( $lprocs >= 2 ) {
@@ -129,7 +129,7 @@ sub run_blast_check {
 "\n****\n\nYou do not appear to have LEGACY BLAST installed or it is installed in the wrong location.\nPlease download the LEGACY version from http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download and extract the contents to ../fdf/blast/ or see the Readme file.\n\n****\n";
         print "\nContinue without BLAST? (y/N)\n";
         print ">:";
-        chomp( $blast_choice = <STDIN> );
+        chomp( $blast_choice = <ARGV> );
 
         given ($blast_choice) {
 
@@ -173,7 +173,7 @@ sub which_genomes {
 
     print "Please enter the number for the directory where your genomes are located.\n>:";
 
-    chomp( $menu_choice = <STDIN> );
+    chomp( $menu_choice = <ARGV> );
     if (   $menu_choice > $#folders
         || $menu_choice < '0'
         || $menu_choice == m/[aA-zZ]/ )
@@ -203,7 +203,7 @@ sub initial_menu {
 
 sub run_ID {
     print ">:";
-    chomp( $run_ID = <STDIN> );
+    chomp( $run_ID = <ARGV> );
     if ( $run_ID eq "" ) {
         $run_ID = time();
         print "Your ID is now: $run_ID\n";
@@ -273,7 +273,7 @@ sub menu {
     #
     print "$run_ID>:";
 
-    chomp( $menu_choice = <STDIN> );
+    chomp( $menu_choice = <ARGV> );
 
     given ($menu_choice) {
 
@@ -333,7 +333,6 @@ sub menu {
             print `clear`, "\n";
             print
 "Thanks for using fdfBLAST!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
-            last;
         }
         default {
             print `clear`, "\n";
@@ -383,7 +382,7 @@ sub menu_four {
     print "Limit by Hit Number? (default: 250, set to 500 for testing dataset)\n";
     $hit_limit = "250";
     print ">:";
-    chomp( $hit_limit = <STDIN> );
+    chomp( $hit_limit = <ARGV> );
     &print_time("start");
     &get_genomes;
     &differential_new;
@@ -410,14 +409,11 @@ sub menu_six {
 sub return_or_quit {
     print "\nReturn to (M)enu or (Q)uit\n";
     print ">:";
-    chomp( $menu_choice = <STDIN> );
+    chomp( $menu_choice = <ARGV> );
     given ($menu_choice) {
         when (/Q/i) {
             print `clear`, "\n";
-            print "Thanks for using fdfBLAST, goodbye!ah right\n";
-            print
-"Thanks for using fdfBLAST!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
-            last;
+            print "Thanks for using fdfBLAST, goodbye!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
         }
         when (/M/i) {
             print `clear`, "\n";
@@ -432,14 +428,14 @@ sub return_or_quit {
 sub print_time {
     my $time = shift;
     if ( $time eq "start" ) {
-        open my $time_fh, ">>$run_directory/time.txt";
+        open my $time_fh, '>>', "$run_directory/time.txt";
         print $time_fh "Menu Choice = $menu_choice\n";
         $start_time = scalar localtime(time);
         print $time_fh " Start Time = $start_time\n";
         close($time_fh);
     }
     elsif ( $time eq "end" ) {
-        open $time_fh, ">>$run_directory/time.txt";
+        open $time_fh, '>>', "$run_directory/time.txt";
         $end_time = scalar localtime(time);
         print $time_fh "   End Time = $end_time\n";
         &dhms;
@@ -484,9 +480,10 @@ sub dhms {
 
 sub print_log {
     my $message = shift;
-    open my $log_fh, ">>$run_directory/log.txt";
+    open my $log_fh, '>>', "$run_directory/log.txt";
     print $log_fh "$message";
     close($log_fh);
+    return;
 }
 
 ## Get all genome names from the genome directory and put into an array
@@ -588,7 +585,7 @@ sub run_gene_hits_helper {
 
     mkdir( $gene_hits_initial, 0755 );
     print "E Value Upper Limit - e.g 1e-10\n>:";
-    chomp( $upper_limit = <STDIN> );
+    chomp( $upper_limit = <ARGV> );
     if ( $upper_limit eq "" ) {
         $upper_limit = "1e-10";
     }
@@ -597,7 +594,7 @@ sub run_gene_hits_helper {
     &evaluate($upper_limit);
     $upper_limit = $value;
     print "E Value Lower Limit - e.g 0\n>:";
-    chomp( $lower_limit = <STDIN> );
+    chomp( $lower_limit = <ARGV> );
     if ( $lower_limit eq "" ) {
         $lower_limit = "0";
     }
@@ -664,7 +661,7 @@ sub run_gene_hits {
             push( @comparison_length, $y_pos );
             $x_pos++;
         }
-        open my $out_fh, ">$gene_hits_initial/$in_filename.csv";
+        open my $out_fh, '>', "$gene_hits_initial/$in_filename.csv";
         ##### Surely we don't need this twice? I don't know Guy, what were you trying to do?
         $query_genome_length = $x_pos;
 
@@ -748,7 +745,7 @@ sub generate_lookup_tables {
 
                 ( $file_i, $dir, $ext ) = fileparse( $file_names[$i], '\..*' );
                 ( $file_j, $dir, $ext ) = fileparse( $file_names[$j], '\..*' );
-                open my $in_fh, "<$gene_hits_initial/$file_i\_$file_j\.csv";
+                open my $in_fh, '<', "$gene_hits_initial/$file_i\_$file_j\.csv";
 
                 # We're using while with an iterator instead of foreach to
                 # read in the file line by line adding each column to the 2d array
@@ -780,7 +777,7 @@ sub generate_lookup_tables {
                 ###
             }    # End second (internal) for loop
             ##close($in_fh);
-            open my $out_fh, ">$gene_hits_lookup/$file_i\.csv";
+            open my $out_fh, '>', "$gene_hits_lookup/$file_i\.csv";
 
             # Here we use two for loops to iterate through the 2D array
             # for $i from 0 to length of @AoA
@@ -821,18 +818,19 @@ sub generate_lookup_tables {
 sub parse_lookup {
 
     print "Lower Ratio Value (default: 0.1)\n>:";
-    chomp( $lower_ratio = <STDIN> );
+    chomp( $lower_ratio = <ARGV> );
     if ( $lower_ratio == "" ) {
         $lower_ratio = "0.1";
     }
     print "Higher Ratio Value (default: 1.0)\n>:";
-    chomp( $higher_ratio = <STDIN> );
+    chomp( $higher_ratio = <ARGV> );
     if ( $higher_ratio == "" ) {
         $higher_ratio = "1.0";
     }
 }
 
 sub differential_new {
+    @variables        = @_;
 
     # Output directory
     mkdir( $gene_hits_results,       0755 );
@@ -841,7 +839,7 @@ sub differential_new {
 
     print "\nDifferential Extraction\n";
     $verbose          = 0;
-    @variables        = @_;
+    
     $limit            = $variables[0];
     @lookup_filenames = glob "$gene_hits_lookup/*.csv";
     $lookup_number    = @lookup_filenames;
@@ -885,7 +883,7 @@ sub comparison {
     $ifile_compare = fileparse($ifile);
     $verbose       = 0;
 
-    open my $query_fh, "<$ifile";
+    open my $query_fh, '<', "$ifile";
     #####
     print "\tOpening: $ifile\n" if $verbose == 1;
     #####
@@ -904,7 +902,7 @@ sub comparison {
             $line_number = $l + 1;
             &get_accession( $ifile, $jfile, $line_number );
             $missing_genome = fileparse($jfile);
-            open my $nohits_fh, ">>$gene_hits_results/no_hits_$missing_genome";
+            open my $nohits_fh, '>>', "$gene_hits_results/no_hits_$missing_genome";
             print $nohits_fh "$accession,\n";
         }
         elsif ( $query_array[$l] == "1" ) {
@@ -926,7 +924,7 @@ sub comparison {
 
             if ( $scan_array[0] eq "recip" ) {
 
-                open my $non_diff_fh, ">>$gene_hits_duplications/duplications_$kfile";
+                open my $non_diff_fh, '>>', "$gene_hits_duplications/duplications_$kfile";
 
                 &get_line_number_start("$gene_hits_duplications/duplications_$kfile");
 
@@ -961,7 +959,7 @@ sub comparison {
 
                 if ( $scan_array[0] eq "recip" ) {
 
-                    open my $differentials_fh, ">>$gene_hits_differentials/differentials_$kfile";
+                    open my $differentials_fh, '>>', "$gene_hits_differentials/differentials_$kfile";
 
                     &get_line_number_start("$gene_hits_differentials/differentials_$kfile");
 
@@ -989,7 +987,7 @@ sub remove_single_recips {
 
     for ( $q = 0 ; $q < $num_files ; $q++ ) {
         print "\nRemoving singles from $diff_file_names[$q]\n";
-        open my $diff_fh, "<$diff_file_names[$q]";
+        open my $diff_fh, '<', "$diff_file_names[$q]";
 
         ( $file, $dir, $ext ) = fileparse( $diff_file_names[$q], '\..*' );
         @temp_array = ();
@@ -1015,7 +1013,7 @@ sub remove_single_recips {
                 # Do Nothing
             }
             else {
-                open my $output_fh, ">>$dir$file\_fixed$ext";
+                open my $output_fh, '>>', "$dir$file\_fixed$ext";
                 foreach my $element (@line_n) {
                     print $output_fh $element . "\;";
                 }
@@ -1042,7 +1040,7 @@ sub fusion_scan {
     for ( my $i = 0 ; $i < $fusion_number ; $i++ ) {
 
         undef(@fusion);
-        open my $fusion_fh, "<$fusion_filenames[$i]";
+        open my $fusion_fh, '<', "$fusion_filenames[$i]";
         $input_file = fileparse( $fusion_filenames[$i] );
         print "Opening $fusion_filenames[$i]\n";
 
@@ -1183,13 +1181,13 @@ sub rank_sort {
         # Discard
     }
     elsif ($left_num == 0 && $right_num == 0
-        or $right_num == 0 && $middle_num == 0
-        or $left_num == 0  && $middle_num == 0 )
+        || $right_num == 0 && $middle_num == 0
+        || $left_num == 0  && $middle_num == 0 )
     {
 
         # Discard
     }
-    elsif ( $left_num == 0 && $right_num >= 1 and $middle_num >= 1 ) {
+    elsif ( $left_num == 0 && $right_num >= 1 && $middle_num >= 1 ) {
 
         &ignore_orthologues;
         print "\t\tXX $continue XX\n" if $verbose == 1;
@@ -1197,7 +1195,7 @@ sub rank_sort {
             &middle_and_right;
         }
     }
-    elsif ( $right_num == 0 && $left_num >= 1 and $middle_num >= 1 ) {
+    elsif ( $right_num == 0 && $left_num >= 1 && $middle_num >= 1 ) {
 
         &ignore_orthologues;
         print "\t\tXX $continue XX\n" if $verbose == 1;
@@ -1206,13 +1204,13 @@ sub rank_sort {
         }
 
     }
-    elsif ( $middle_num == 0 && $left_num >= 1 and $right_num >= 1 ) {
+    elsif ( $middle_num == 0 && $left_num >= 1 && $right_num >= 1 ) {
 
         print "011\n" if $verbose == 1;
         &left_and_right;
 
     }
-    elsif ( $left_num >= 1 && $right_num >= 1 and $middle_num >= 1 ) {
+    elsif ( $left_num >= 1 && $right_num >= 1 && $middle_num >= 1 ) {
 
         #print "\nXX - All - XX\n";
         &ignore_orthologues;
@@ -1290,7 +1288,7 @@ sub ignore_orthologues {
     }
     print "\n" if $verbose == 1;
 
-    $continue = "no" if ( grep /^no$/, @cont );
+    $continue = "no" if ( grep { /^no$/} @cont );
 
     undef(@cont);
     return $continue;
@@ -1375,22 +1373,22 @@ sub middle_and_right {
 ## These could be call to print_log with a filename variable...
 sub print_comp_list {
     my $message = shift;
-    open my $log_fh, ">>$run_directory/composite_list.csv";
+    open my $log_fh, '>>', "$run_directory/composite_list.csv";
     print $log_fh "$message";
     close($log_fh);
 }
 
 sub print_split_list {
     my $message = shift;
-    open my $log_fh, ">>$run_directory/split_list.csv";
+    open my $log_fh, '>>', "$run_directory/split_list.csv";
     print $log_fh "$message";
     close($log_fh);
 }
 
 sub read_domain_file {
     print "Name of all-domains file?\n>:";
-    chomp( $domain_in = <STDIN> );
-    open my $domains_fh, "$run_directory\/$domain_in";
+    chomp( $domain_in = <ARGV> );
+    open my $domains_fh, '<', "$run_directory\/$domain_in";
     while (<$domains_fh>) {
         $line = $_;
         push( @domains, $line );
@@ -1715,10 +1713,10 @@ sub domain_colour {
     $sum = eval { join '+', @domain };
     $sum = $sum / 2;
 
-    $r = int( ( ( $sum * 10 ) - 40 ) - 240 );
-    $g = int( ( ( $sum * 10 ) - 40 ) - 120 );
-    $b = int( ( ( $sum * 10 ) - 40 ) - 80 );
-    $a = "45";
+    my $r = int( ( ( $sum * 10 ) - 40 ) - 240 );
+    my $g = int( ( ( $sum * 10 ) - 40 ) - 120 );
+    my $b = int( ( ( $sum * 10 ) - 40 ) - 80 );
+    my $a = "45";
 
     #$dom_colour = $im->colorAllocate( $r, $g, $b );
     $dom_colour = $im->colorAllocateAlpha( $r, $g, $b, $a );
@@ -1730,7 +1728,7 @@ sub scale_bars {
     $scale_quotient = int( $bar_length / 100 );
 
     #Large Scale Bars
-    for ( $a = 0 ; $a <= $scale_quotient ; $a++ ) {
+    for ( my $a = 0 ; $a <= $scale_quotient ; $a++ ) {
         $scale = $a * 100;
         $im->string( gdSmallFont, $scale + $left_pos, $font_vpos, "$scale", $black );
         $im->rectangle( $scale + $left_pos, $bar_vpos - 5, $scale + $left_pos + 1, $bar_vpos - 1, $black );
@@ -1825,9 +1823,9 @@ sub get_colour {
     if ( $colour_ratio le "0.4" ) {
 
         # Black
-        $r = int( 42 - ( 40 - ( 10 * ( 10 * 1 ) ) ) );
-        $g = int( 40 - ( 40 - ( 10 * ( 10 * 1 ) ) ) );
-        $b = int( 41 - ( 40 - ( 10 * ( 10 * 1 ) ) ) );
+        my $r = int( 42 - ( 40 - ( 10 * ( 10 * 1 ) ) ) );
+        my $g = int( 40 - ( 40 - ( 10 * ( 10 * 1 ) ) ) );
+        my $b = int( 41 - ( 40 - ( 10 * ( 10 * 1 ) ) ) );
 
         #print "Black $r, $g, $b\n";
         $ratio_colour = $im->colorAllocate( $r, $g, $b );
@@ -1835,9 +1833,9 @@ sub get_colour {
     elsif ( $colour_ratio gt "0.4" && $colour_ratio le "0.6" ) {
 
         # Red
-        $r = int( 123 - ( 60 - ( 10 * ( 10 * 1 ) ) ) );
-        $g = int( 59 -  ( 60 - ( 10 * ( 10 * 1 ) ) ) );
-        $b = int( 59 -  ( 60 - ( 10 * ( 10 * 1 ) ) ) );
+        my $r = int( 123 - ( 60 - ( 10 * ( 10 * 1 ) ) ) );
+        my $g = int( 59 -  ( 60 - ( 10 * ( 10 * 1 ) ) ) );
+        my $b = int( 59 -  ( 60 - ( 10 * ( 10 * 1 ) ) ) );
 
         #print "Red $r, $g, $b\n";
         $ratio_colour = $im->colorAllocate( $r, $g, $b );
@@ -1845,9 +1843,9 @@ sub get_colour {
     elsif ( $colour_ratio gt "0.6" && $colour_ratio le "0.7" ) {
 
         # Purple
-        $r = int( 96 -  ( 70 - ( 10 * ( 10 * 1 ) ) ) );
-        $g = int( 84 -  ( 70 - ( 10 * ( 10 * 1 ) ) ) );
-        $b = int( 112 - ( 70 - ( 10 * ( 10 * 1 ) ) ) );
+        my $r = int( 96 -  ( 70 - ( 10 * ( 10 * 1 ) ) ) );
+        my $g = int( 84 -  ( 70 - ( 10 * ( 10 * 1 ) ) ) );
+        my $b = int( 112 - ( 70 - ( 10 * ( 10 * 1 ) ) ) );
 
         #print "Purple $r, $g, $b\n";
         $ratio_colour = $im->colorAllocate( $r, $g, $b );
@@ -1855,9 +1853,9 @@ sub get_colour {
     elsif ( $colour_ratio gt "0.7" && $colour_ratio le "0.8" ) {
 
         # Blue
-        $r = int( 33 -  ( 80 - ( 10 * ( 10 * 1 ) ) ) );
-        $g = int( 135 - ( 80 - ( 10 * ( 10 * 1 ) ) ) );
-        $b = int( 204 - ( 80 - ( 10 * ( 10 * 1 ) ) ) );
+        my $r = int( 33 -  ( 80 - ( 10 * ( 10 * 1 ) ) ) );
+        my $g = int( 135 - ( 80 - ( 10 * ( 10 * 1 ) ) ) );
+        my $b = int( 204 - ( 80 - ( 10 * ( 10 * 1 ) ) ) );
 
         #print "Blue $r, $g, $b\n";
         $ratio_colour = $im->colorAllocate( $r, $g, $b );
@@ -1865,9 +1863,9 @@ sub get_colour {
     elsif ( $colour_ratio gt "0.8" && $colour_ratio le "1.0" ) {
 
         # Green
-        $r = int( 43 -  ( 100 - ( 10 * ( 10 * 1 ) ) ) );
-        $g = int( 166 - ( 100 - ( 10 * ( 10 * 1 ) ) ) );
-        $b = int( 22 -  ( 100 - ( 10 * ( 10 * 1 ) ) ) );
+        my $r = int( 43 -  ( 100 - ( 10 * ( 10 * 1 ) ) ) );
+        my $g = int( 166 - ( 100 - ( 10 * ( 10 * 1 ) ) ) );
+        my $b = int( 22 -  ( 100 - ( 10 * ( 10 * 1 ) ) ) );
 
         #print "Green $r, $g, $b\n";
         $ratio_colour = $im->colorAllocate( $r, $g, $b );
@@ -1891,7 +1889,7 @@ sub duplication_scan {
     $duplication_number    = @duplication_filenames;
 
     for ( $i = 0 ; $i < $duplication_number ; $i++ ) {
-        open my $duplication_fh, "<$duplication_filenames[$i]";
+        open my $duplication_fh, '<', "$duplication_filenames[$i]";
         #####
         #print "Opening $duplication_filenames[$i]...\n" if $verbose == 1;
         #####
@@ -1946,7 +1944,7 @@ sub duplication_scan {
             #print "Output to $gene_hits_duplications/$count\_hits_$output_file\n" if $verbose == 1;
             #####
             $hits = $count + 1;
-            open my $output_fh, ">>$gene_hits_duplications/$hits\_hits_$output_file";
+            open my $output_fh, '>>', "$gene_hits_duplications/$hits\_hits_$output_file";
             print $output_fh "$query_gene,$query_length,";
             foreach my $value (@subject) {
                 print $output_fh "$value";
@@ -1966,9 +1964,9 @@ sub duplication_scan {
 }
 
 sub scan_subject_initial {
+    @variables     = @_;
     $verbose       = 0;
     @scan_array    = ();
-    @variables     = @_;
     $query_hits    = $variables[0];
     $init_file     = $variables[1];
     $init_file_two = $variables[2];
@@ -1986,7 +1984,7 @@ sub scan_subject_initial {
     # print "Opening $gene_hits_initial/$init_file_two\_$init_file\.txt\n";
     #####
 
-    open my $in_fh, "<$gene_hits_initial/$init_file_two\_$init_file\.csv";
+    open my $in_fh, '<', "$gene_hits_initial/$init_file_two\_$init_file\.csv";
 
     while (<$in_fh>) {
         my ($line) = $_;
@@ -2033,12 +2031,12 @@ sub get_line_number_start {
     # This method opens a file and gets the last
     # line number and returns the value
     # This will probably be exponentially slow. Hrmmm.
-    $last_line_number = 0;
-
     @variables   = @_;
+    $last_line_number = 0;
+    
     $file_handle = $variables[0];
 
-    open my $file, "<$file_handle";
+    open my $file, '<', "$file_handle";
 
     while (<$file>) {
 
@@ -2052,12 +2050,11 @@ sub get_line_number_start {
     close($file);
     #####chomp($last_line);
     ######$last_line_number = $last_line_number + 1;
-    return "$last_line_number";
-    return "$last_accession";
+    return "$last_line_number,$last_accession";
 }
 
 sub get_accession {
-    $verbose = 0;
+    
 
     # First we need to open the corresponding file in the initial dir
     # To do that we need the file name (no ext or dir) of the lookup file
@@ -2065,6 +2062,7 @@ sub get_accession {
     $init_file          = $variables[0];
     $init_file_two      = $variables[1];
     $lookup_line_number = $variables[2];
+    $verbose = 0;
 
     #####$init_file =~ m/(.*?\/lookup\/)(.*?\..*?)(\.csv)/;
     #####$init_file = $2;
@@ -2076,7 +2074,7 @@ sub get_accession {
 
     # Set initial directory and open file
 
-    open my $access_fh, "<$gene_hits_initial\/$init_file\_$init_file_two\.csv";
+    open my $access_fh, '<', "$gene_hits_initial\/$init_file\_$init_file_two\.csv";
     #####
     # print "Opening $gene_hits_initial\/$init_file\_$init_file_two\.txt\n" if $verbose == 1;
     #####
@@ -2106,8 +2104,7 @@ sub get_accession {
 
 sub get_hit_info {
 
-    $verbose      = 0;
-    @return_array = ();
+
 
     # First we need to open the corresponding file in the initial dir
     # To do that we need the file name (no ext or dir) of the lookup file
@@ -2117,6 +2114,8 @@ sub get_hit_info {
     $lookup_line_number = $variables[2];
     $location           = $variables[3];
     $location           = $location + 1;
+        $verbose      = 0;
+    @return_array = ();
 
     ( $init_file, $dir, $ext ) = fileparse( $init_file, '\..*' );
 
@@ -2124,7 +2123,7 @@ sub get_hit_info {
 
     # Set initial directory and open file
 
-    open my $access_fh, "<$gene_hits_initial\/$init_file\_$init_file_two\.csv";
+    open my $access_fh, '<', "$gene_hits_initial\/$init_file\_$init_file_two\.csv";
 
     # While file, read each line and compare line numbers
     #
