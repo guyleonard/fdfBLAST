@@ -175,7 +175,7 @@ sub which_genomes {
 
     chomp( $menu_choice = <ARGV> );
     if (   $menu_choice > $#folders
-        || $menu_choice < '0'
+        || $menu_choice lt '0'
         || $menu_choice == m/[aA-zZ]/ )
     {
         print `clear`, "\n";
@@ -819,12 +819,12 @@ sub parse_lookup {
 
     print "Lower Ratio Value (default: 0.1)\n>:";
     chomp( $lower_ratio = <ARGV> );
-    if ( $lower_ratio == "" ) {
+    if ( $lower_ratio eq "" ) {
         $lower_ratio = "0.1";
     }
     print "Higher Ratio Value (default: 1.0)\n>:";
     chomp( $higher_ratio = <ARGV> );
-    if ( $higher_ratio == "" ) {
+    if ( $higher_ratio eq "" ) {
         $higher_ratio = "1.0";
     }
 }
@@ -898,14 +898,14 @@ sub comparison {
 
     $query_array_length = @query_array;
     for ( $l = 0 ; $l < $query_array_length ; $l++ ) {
-        if ( $query_array[$l] == "0" && $ifile_compare eq $kfile ) {
+        if ( $query_array[$l] eq "0" && $ifile_compare eq $kfile ) {
             $line_number = $l + 1;
             &get_accession( $ifile, $jfile, $line_number );
             $missing_genome = fileparse($jfile);
             open my $nohits_fh, '>>', "$gene_hits_results/no_hits_$missing_genome";
             print $nohits_fh "$accession,\n";
         }
-        elsif ( $query_array[$l] == "1" ) {
+        elsif ( $query_array[$l] eq "1" ) {
 
             $line_number = $l + 1;
             &get_accession( $ifile, $jfile, $line_number );
@@ -932,7 +932,7 @@ sub comparison {
 "$last_line_number;$accession_array[0];$accession_array[1];$return_array[0];$return_array[1];$return_array[2];$return_array[3]\n";
             }
         }
-        elsif ( $query_array[$l] >= "2" && $query_array[$l] <= $hit_limit ) {
+        elsif ( $query_array[$l] ge "2" && $query_array[$l] <= $hit_limit ) {
             $verbose = 0;
             #####
             print "\# Query Hits = $query_array[$l]\n" if $verbose == 2;
@@ -1008,7 +1008,7 @@ sub remove_single_recips {
             $ln_n  = $line_n[0];
             $ln_n1 = $line_n1[0];
 
-            if ( $ln_n eq 0 && $ln_n1 eq 0 ) {
+            if ( $ln_n == 0 && $ln_n1 == 0 ) {
 
                 # Do Nothing
             }
@@ -1057,7 +1057,7 @@ sub fusion_scan {
             @array_line = split( /;/, $fusion[$j] );
             $line_number = $array_line[0];
 
-            if ( $line_number eq 0 ) {
+            if ( $line_number == 0 ) {
 
                 $query_accession = $array_line[1];
                 $query_length    = $array_line[2];
@@ -1081,7 +1081,7 @@ sub fusion_scan {
                     @next_array_line = split( /;/, $fusion[$k] );
                     $next_line_number = $next_array_line[0];
 
-                    if ( $next_line_number ne 0 ) {
+                    if ( $next_line_number != 0 ) {
 
                         $next_query_accession = $next_array_line[1];
 
@@ -1097,7 +1097,7 @@ sub fusion_scan {
                         # more than 50.
                         $next_match_length = $next_subject_hit_range_end - $next_subject_hit_range_start;
 
-                        if (   $next_line_number ne 0
+                        if (   $next_line_number != 0
                             && $query_accession eq $next_query_accession
                             && $next_subject_length > 50
                             && $next_match_length > 50 )
@@ -1268,14 +1268,14 @@ sub ignore_orthologues {
         print "\t$query_accession - $middle_evalue\n" if $verbose == 1;
         $length_ratio = $middle_length / $query_length;
 
-        if ( $length_ratio <= "0.95" ) {
+        if ( $length_ratio le "0.95" ) {
 
             #$continue = "yes";
             push( @cont, "yes" );
             print "\t\t$unfused_middles[0] - $middle_length / $query_length = $length_ratio - yes\n"
               if $verbose == 1;
         }
-        elsif ( $length_ratio > "0.95" ) {
+        elsif ( $length_ratio gt "0.95" ) {
 
             push( @cont, "no" );
             print "\t\t$unfused_middles[0] - $middle_length / $query_length = $length_ratio - no\n"
@@ -1567,12 +1567,12 @@ sub draw_subjects {
         &accession_name($ratio_colour);
         ###############################
         # I think this section fixes the second domain out of sync bug!
-        if ( $c eq 0 ) {
+        if ( $c == 0 ) {
 
             #print "***C*** = $c\n";
             &draw_domain;
         }
-        elsif ( $c ge 1 ) {
+        elsif ( $c == 1 ) {
 
             #$left_pos = $padding_left + $name_length + 400;
             $left_pos = $padding_left + $temp[1] + $name_length;
@@ -1760,7 +1760,7 @@ sub bar {
 
 sub accession_name {
     my $colour = shift;
-    if ( $actual_length == "" ) {
+    if ( $actual_length eq "" ) {
         $im->string( gdSmallFont, $padding_left - 50, $accession_vpos,      "$accession",    $colour );
         $im->string( gdTinyFont,  $padding_left - 50, $accession_vpos + 12, "L=$bar_length", $colour );
     }
