@@ -10,7 +10,7 @@
 #######
 ##use warnings;
 ##use strict;
-our ($VERSION) = '1.20120704';
+our ($VERSION) = '1.20120702';
 
 # Import Modules
 use Bio::SearchIO;     # Bioperl for input/output/persing of BLAST etc
