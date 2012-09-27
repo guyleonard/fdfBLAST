@@ -3,8 +3,9 @@
 3. Running fdFBLAST
 4. PFAM Domains
 5. Installing Dependencies
-6. Other Notes
-7. Accessory Scripts
+6. Example Genomes
+7. Other Notes
+8. Accessory Scripts
 
 Q. Why are there two versions of the script?
 
@@ -128,6 +129,9 @@ There may be dependencies I have forgotten about related to GD that you need to 
 PFAM can be found here ftp://ftp.sanger.ac.uk/pub/databases/Pfam/releases/Pfam26.0/Pfam-A.hmm.gz
 
 HMMER can be found here http://hmmer.janelia.org/
+
+Example Genomes
+---------------
 
 Other Notes
 -----------
