@@ -9,7 +9,7 @@
 
 Q. Why are there two versions of the script?
 
-A. fdfBLAST_1.20120702.pl is the version I ran during the analysis for the journal article, the version without a date, fdfBLAST.pl, is the latest version with minor bug fixes and code style/sanity changes. Github has recorded most of the changes, some may be available in the code's comments. Functionally there is no difference.
+A. fdfBLAST_old.pl is the version I ran during the analysis for the journal article, the version named, fdfBLAST.pl, is the latest version with minor bug fixes and code style/sanity changes. Github has recorded most of the changes, some may be available in the code's comments. Functionally there is no difference.
 
 
 Prerequisites
