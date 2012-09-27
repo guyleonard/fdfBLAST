@@ -526,6 +526,8 @@ sub run_gene_hits {
     my $upper_limit = $_[1];
     my $lower_limit = $_[2];
 
+    #print "XXX\n@g2gc_files\n$#g2gc_files\n$upper_limit\n$lower_limit\nXXX\n";
+
     for ( my $i = 0 ; $i <= $#g2gc_files ; $i++ ) {
         my $current = $i + 1;
         print "\n$current of " . ( $#g2gc_files + 1 );
@@ -540,8 +542,8 @@ sub run_gene_hits {
         # X = Blast sequence number
         my $x_pos = 0;
 
-        #undef(@comparison_length);
-        my @comparison_length = $EMPTY;
+        undef(@comparison_length);
+        #my @comparison_length = $EMPTY;
 
         my $search = new Bio::SearchIO(
             '-format' => 'blast',
@@ -577,43 +579,45 @@ sub run_gene_hits {
             push( @comparison_length, $y_pos );
             $x_pos++;
         }
+
         open my $out_fh, '>', "$GENE_HITS_INITIAL/$in_filename.csv";
-        ##### Surely we don't need this twice? I don't know Guy, what were you trying to do?
+        ##### Surely we don't need this twice? 
+        # I don't know Guy, what were you trying to do?
         $query_genome_length = $x_pos;
 
         #Append hit numbers to query_genome array
-        for ( $x = 0 ; $x < $query_genome_length ; $x++ ) {
+        for ( my $x = 0 ; $x < $query_genome_length ; $x++ ) {
 
-            $comparison_genome_length = $comparison_length[$x];
-            $count                    = 0;
-            for ( $d = 0 ; $d < $comparison_genome_length ; $d++ ) {
 
+            my $comparison_genome_length = $comparison_length[$x];
+            my $count                    = 0;
+
+            for ( my $d = 0 ; $d < $comparison_genome_length ; $d++ ) {
                 $evalue = "$comparison_genome[$x][$d]";
                 $evalue =~ m/(.*?)\,(\d*)\,(.*?)\,(.*?)\,/;
                 $evalue = $3;
-                &evaluate( $value = "$evalue" );
+                my $value = evaluate( $evalue );
                 $evalue = $value;
                 if (   ( $evalue <= $upper_limit )
-                    && ( $evalue >= $lower_limit ) )
-                {
+                    && ( $evalue >= $lower_limit ) ) {
                     $count++;
                 }
             }
             $query_genome[$x][2] = $count;
         }
 
-        for ( $x = 0 ; $x < $query_genome_length ; $x++ ) {
+        for ( my $x = 0 ; $x < $query_genome_length ; $x++ ) {
 
             print $out_fh "$query_genome[$x][2],$query_genome[$x][0],$query_genome[$x][1],";
 
-            $comparison_genome_length2 = $query_genome[$x][2];
+            my $comparison_genome_length2 = $query_genome[$x][2];
 
             for ( $y = 0 ; $y < $comparison_genome_length2 ; $y++ ) {
 
                 $evalue = "$comparison_genome[$x][$y]";
                 $evalue =~ m/(.*?)\,(\d*)\,(.*?)\,(.*?)\,/;
                 $evalue = $3;
-                &evaluate( $value = "$evalue" );
+                my $value = evaluate( $evalue );
                 $evalue = $value;
 
                 ## 0 is the lower limit as the lower the E-value,
