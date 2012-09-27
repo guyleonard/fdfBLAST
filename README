@@ -7,10 +7,12 @@
 7. Other Notes
 8. Accessory Scripts
 
-Q. Why are there two versions of the script?
+Q. Why are there several versions of the script?
 
-A. fdfBLAST_old.pl is the version I ran during the analysis for the journal article, the version named, fdfBLAST.pl, is the latest version with minor bug fixes and code style/sanity changes. Github has recorded most of the changes, some may be available in the code's comments. Functionally there is no difference.
-
+A.fdfBLAST.pl - current working version
+fdfBLAST_1.20120702.pl - current working version with version number
+fdfBLAST_1.20120704.pl - experimental update, consider buggy
+fdfBLAST_old.pl - This is the version used for manuscript preparation, deposited here for reproducibility/openness
 
 Prerequisites
 --------------
