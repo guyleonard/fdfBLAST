@@ -1,0 +1,15 @@
+Menu Choice = Extract Gene Hit Lists
+ Start Time = Thu Sep 27 19:09:56 2012
+   End Time = Thu Sep 27 19:10:01 2012
+ Total Time =    0 days   0 hours   0 minutes   5 seconds
+
+Menu Choice = Parse Tables
+ Start Time = Thu Sep 27 19:10:07 2012
+   End Time = Thu Sep 27 19:10:07 2012
+ Total Time =    0 days   0 hours   0 minutes   0 seconds
+
+Menu Choice = Identify Fusions
+ Start Time = Thu Sep 27 19:10:10 2012
+   End Time = Thu Sep 27 19:10:12 2012
+ Total Time =    0 days   0 hours   0 minutes   2 seconds
+
