@@ -10,7 +10,7 @@
 #######
 ##use warnings;
 ##use strict;
-our ($VERSION) = '1.20120704';
+our ($VERSION) = '1.20120702';
 
 # Import Modules
 use Bio::SearchIO;     # Bioperl for input/output/persing of BLAST etc
@@ -311,7 +311,7 @@ sub menu {
         when (/Q/ism) {
             print `clear`, "\n";
             print
-"Thanks for using fdfBLAST!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Genome-scale comparative analysis of gene fusions, gene fissions and the fungal tree of life. In Preparation.\"\n";
+"Thanks for using fdfBLAST!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
         }
         default {
             print `clear`, "\n";
@@ -395,7 +395,7 @@ sub return_or_quit {
         when (/Q/i) {
             print `clear`, "\n";
             print
-"Thanks for using fdfBLAST, goodbye!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Genome-scale comparative analysis of gene fusions, gene fissions and the fungal tree of life. In Preparation.\"\n";
+"Thanks for using fdfBLAST, goodbye!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
         }
         when (/M/i) {
             print `clear`, "\n";
@@ -522,7 +522,7 @@ sub run_gene_hits_helper {
 
 sub run_gene_hits {
 
-    my @g2gc_files  = @{ $_[0] }; # unpack and deref array
+    my @g2gc_files  = @{ $_[0] };
     my $upper_limit = $_[1];
     my $lower_limit = $_[2];
 
@@ -540,6 +540,7 @@ sub run_gene_hits {
         # X = Blast sequence number
         my $x_pos = 0;
 
+        #undef(@comparison_length);
         my @comparison_length = $EMPTY;
 
         my $search = new Bio::SearchIO(
@@ -649,32 +650,32 @@ sub generate_lookup_tables {
         mkdir( $GENE_HITS_LOOKUP, 0755 );
 
         # Internal counter
-        my $run = 0;
+        $run = 0;
 
         # Two for loops to iterate through each gene hits initial file
         # and add the values to a 2d array for output to file
-        for my $i ( 0 .. $#genomes) {
-            for my $j ( 0 .. $#genomes) {
+        for ( $i = 0 ; $i <= $#genomes ; $i++ ) {
+            for ( $j = 0 ; $j <= $#genomes ; $j++ ) {
 
-                my ( $file_i, $diri, $exti ) = fileparse( $genomes[$i], '\..*' );
-                my ( $file_j, $dirj, $extj ) = fileparse( $genomes[$j], '\..*' );
+                ( $file_i, $dir, $ext ) = fileparse( $genomes[$i], '\..*' );
+                ( $file_j, $dir, $ext ) = fileparse( $genomes[$j], '\..*' );
                 open my $in_fh, '<', "$GENE_HITS_INITIAL/$file_i\_$file_j\.csv";
 
                 # We're using while with an iterator instead of foreach to
                 # read in the file line by line adding each column to the 2d array
-                my $x = 0;
+                $x = 0;
                 while (<$in_fh>) {
                     my ($line) = $_;
                     chomp($line);
-                    my @temp = split( /,/, $line );
+                    @temp = split( /,/, $line );
                     $AoA[$x][$j] = $temp[0];
                     $x++;
                 }
 
                 # Then we add up the values in each column for each file
                 # using a for loop
-                my $total_in_array_column = 0;
-                for ( 0 .. $#AoA ) {
+                $total_in_array_column = 0;
+                for my $i ( 0 .. $#AoA ) {
                     $total_in_array_column += $AoA[$i][$j];
                 }
 
@@ -687,19 +688,21 @@ sub generate_lookup_tables {
                     print "\nThere are no hits at all, please try some different e-values...\n";
                     last;
                 }
+                ###
             }    # End second (internal) for loop
-
+            ##close($in_fh);
             open my $out_fh, '>', "$GENE_HITS_LOOKUP/$file_i\.csv";
 
             # Here we use two for loops to iterate through the 2D array
+            # for $i from 0 to length of @AoA
             for my $i ( 0 .. $#AoA ) {
 
                 # A reference to the row at position $i
-                my $aref = $AoA[$i];
+                $aref = $AoA[$i];
 
                 # Length of row
-                my $n          = @$aref - 1;
-                my $line_total = 0;
+                $n          = @$aref - 1;
+                $line_total = 0;
 
                 # Second for, $j from 0 to length of row
                 for my $j ( 0 .. $n ) {
@@ -714,12 +717,14 @@ sub generate_lookup_tables {
             }
 
             # Increment run
-            $run++;
+            $run = $run + 1;
 
             # Reset array, so length is not kept at largest
-            @AoA = $EMPTY;
+            # @AoA = ();
+            undef(@AoA);
             print ".";
         }
+        ##close($out_fh);
     }
     print "\n";
 }
