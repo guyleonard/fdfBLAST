@@ -311,7 +311,7 @@ sub menu {
         when (/Q/ism) {
             print `clear`, "\n";
             print
-"Thanks for using fdfBLAST!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
+"Thanks for using fdfBLAST!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Genome-scale comparative analysis of gene fusions, gene fissions and the fungal tree of life. In Preparation.\"\n";
         }
         default {
             print `clear`, "\n";
@@ -395,7 +395,7 @@ sub return_or_quit {
         when (/Q/i) {
             print `clear`, "\n";
             print
-"Thanks for using fdfBLAST, goodbye!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Patterns of gene fusion and fission across the fungi. In Preparation.\"\n";
+"Thanks for using fdfBLAST, goodbye!\nPlease cite: \"Leonard, G. & Richards, T.A. 2012. Genome-scale comparative analysis of gene fusions, gene fissions and the fungal tree of life. In Preparation.\"\n";
         }
         when (/M/i) {
             print `clear`, "\n";
