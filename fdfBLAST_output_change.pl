@@ -54,7 +54,7 @@ sub set_genome_dir {
 
     ######
     ## ADVANCED USER: You may want to add locations to this array...
-    my @genome_directories = ("$WORKING_DIR/genomes");
+    my @genome_directories = ("$WORKING_DIR/example/genomes");
     ######
     my $genome_directory = $EMPTY;
     print "Genomes Directory Menu\n**********************\n";
@@ -1384,14 +1384,28 @@ sub generate_image {
     # We only really need 1dp for the folders, 2dp ratio is printed in image...
     $ratio = sprintf( "%.1f", $ratio );
 
-    $query_accession_dir = "$GENE_HITS_DIFFERENTIALS/$query_accession";
+    # I am making a change here, in order to output the results
+    # to a directory structure based on the split domains
+    # rather than the fusion. Essentially this will put 
+    # any "fusion" with the same two unfused domains in to one folder
+    # these are essentially synonymous with calling Fusion1, Fusion2, Fusion3...etc
+    # However, "related" domains will get their own dirs e.g. dom1+dom2 may
+    # have 5 results, but there could be dom1+dom3 or dom2+dom1 or dom2 + dom4
+    # ideally these should be linked somehow - but for now they're not
+    # also, any folder with only 1 item suggests a single genome (within genomes compared)
+    # fusion and may not be informative...don't get confused with folders with only 1 ratio
+    # folder though as they could contain multiple results...
+
+    ## $query_accession_dir = "$GENE_HITS_DIFFERENTIALS/$query_accession";
+
+    my $output_directory = "$GENE_HITS_DIFFERENTIALS/$unfused_one[0]\_$unfused_two[0]";
 
     &print_comp_list("$query_accession,\n");
     &print_split_list("$unfused_one[0],\n$unfused_two[0],\n");
 
-    if ( -e $query_accession_dir && -d $query_accession_dir ) {
+    if ( -e $output_directory && -d $output_directory ) {
 
-        $ratio_dir = "$query_accession_dir/$ratio";
+        $ratio_dir = "$output_directory/$ratio";
         if ( -e $ratio_dir && -d $ratio_dir ) {
 
             open my $out_fh, '>', "$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
@@ -1409,8 +1423,8 @@ sub generate_image {
     }
     else {
 
-        mkdir( $query_accession_dir, 0755 );
-        $ratio_dir = "$query_accession_dir/$ratio";
+        mkdir( $output_directory, 0755 );
+        $ratio_dir = "$output_directory/$ratio";
         if ( -e $ratio_dir && -d $ratio_dir ) {
 
             open $out_fh, '>', "$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
