@@ -1,4 +1,4 @@
-https://zenodo.org/badge/3666/guyleonard/fdfBLAST.png
+![DOI](https://zenodo.org/badge/3666/guyleonard/fdfBLAST.png)
 
 1. Prerequisites / Dependencies
 2. Initial Setup
