@@ -18,7 +18,7 @@ fdfBLAST_old.pl - This is the version used for manuscript preparation, deposited
 
 Prerequisites
 --------------
-BLAST Legacy Executables
+BLAST+ Executables (makeblastdb, blastp) or DIAMOND
 
 PERL Modules
   Math::BigFloat
@@ -57,9 +57,9 @@ fdfBLAST will present you with a series of options on the command line via a ser
 i) $ perl fdfBLAST.pl
 ii) Answer all the menu options from the options given
 
-1) Step 1 and 2 of the program deal with running formatdb and blastp.
-	This will only need to be run once, per set of genomes.
-	It checks for previous blast comparisons, so you cann add a new genome to an analysis and only have to perform the new set of analyses. 
+1) Step 1 and 2 of the program deal with preparing databases (makeblastdb or diamond makedb) and running blastp (BLAST+ or DIAMOND).
+        This will only need to be run once, per set of genomes.
+        It checks for previous blast comparisons, so you can add a new genome to an analysis and only have to perform the new set of analyses.
 
 2) Steps 3 and 4 are the main parts of fdfBLAST and should run without any interaction
 	There are a couple of options to change if you wish but I would leave them at the defaults for the first run.
@@ -119,7 +119,8 @@ Accession	Length	Domain1~Domain2~etc	Start	End		Start	End
 
 Installing Dependencies
 -----------------------
-Legacy BLAST can be found here http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download
+BLAST+ executables can be obtained from https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/
+DIAMOND can be downloaded from https://github.com/bbuchfink/diamond/releases
 
 Perl Libraries
 You can install them on the command line thus:
@@ -139,9 +140,9 @@ Example Genomes
 
 Other Notes
 -----------
-The fdfBLAST program was developed under a free and open-source Ubuntu Linux environment (http://www.ubuntu.com), although it should be capable of running on any UNIX based operating system (including Apple OSX) where the following programs are available for your system. Perl v5.10.0 (http://www.perl.org) was used to write the main portions of the script. The legacy NCBI BLAST executables (version 2.2.21) are used to perform the BLASTp and RPS-BLAST {Marchler-Bauer, 2005} searches and to prepare the proteome databases ready for use.
+The fdfBLAST program was developed under a free and open-source Ubuntu Linux environment (http://www.ubuntu.com), although it should be capable of running on any UNIX based operating system (including Apple OSX) where the following programs are available for your system. Perl v5.10.0 (http://www.perl.org) was used to write the main portions of the script. Modern NCBI BLAST+ executables (makeblastdb and blastp) or DIAMOND can be used to perform the protein searches and to prepare the proteome databases ready for use.
 
-A new version of the local BLAST executables is now available, called BLAST+ executables, but they were not released at the inception of the program – there is no reason why fdfBLAST could not be adapted to utilise these in a future release – although there is no pressing need to change the script currently since no particular advantage is conferred. Later portions of the script employ the use of the program HMMER3 (http://hmmer.org) and a copy of the Sanger Institute’s PFAM database (Pfam 24.0 - October 2009; Finn, 2010). and the NCBI Conserved Domain Database (CDD version 2.2.2).
+Later portions of the script employ the use of the program HMMER3 (http://hmmer.org) and a copy of the Sanger Institute’s PFAM database (Pfam 24.0 - October 2009; Finn, 2010). and the NCBI Conserved Domain Database (CDD version 2.2.2).
 
 Accessorry Scripts
 ------------------

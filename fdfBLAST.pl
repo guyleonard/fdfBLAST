@@ -28,7 +28,8 @@ our $WORKING_DIR = getcwd;
 
 ###
 # User Editable Variables
-our $BLAST_BIN_DIR = "/usr/bin";    # Normal install = /usr/bin/
+our $BLAST_BIN_DIR   = "/usr/bin";    # Normal install = /usr/bin/
+our $DIAMOND_BIN_DIR = "/usr/bin";    # Default location of the diamond executable
 ###
 
 # Other Variables
@@ -36,11 +37,13 @@ our $EMPTY       = q{};
 our $DEBUG       = 1;               # Set to 1 or 2 for more detailed output
 our @GENOME_LIST = $EMPTY;
 our $HIT_LIMIT   = 500;
+our $SEARCH_TOOL = 'blast';
 
 # Workflow
 our ( $CORE_NUM, $CORES ) = detect_multi_core();    # Check for single or multi-core machine for BLAST
 my $location = set_genome_dir();                    # Set where to look for genome directories
 our $GENOME_DIR = which_genomes($location);         # Set which genome set to use!
+$SEARCH_TOOL = select_search_tool();                # Choose between BLAST+ and DIAMOND workflows
 initial_menu();                                     # User input for run number or next
 our (
     $RUN_ID,            $RUN_DIR,                 $G2GC_DIR,
@@ -174,6 +177,44 @@ sub which_genomes {
     return $directory;
 }
 
+sub select_search_tool {
+
+    while (1) {
+        print "\nSequence Search Tool Menu\n";
+        print "************************\n";
+        print "1) BLAST+ (makeblastdb/blastp)\n";
+        print "2) DIAMOND (makedb/blastp)\n";
+        print "Select search tool (default: 1)\n>:";
+
+        chomp( my $choice = <ARGV> );
+        $choice = "1" if $choice eq $EMPTY;
+
+        if ( $choice eq "1" ) {
+            if ( !-x "$BLAST_BIN_DIR/makeblastdb" || !-x "$BLAST_BIN_DIR/blastp" ) {
+                print "Unable to find makeblastdb or blastp in $BLAST_BIN_DIR. Please update \$BLAST_BIN_DIR and try again.\n";
+                next;
+            }
+            print "Using BLAST+ tools located in $BLAST_BIN_DIR\n" if $DEBUG >= 1;
+            return 'blast';
+        }
+        elsif ( $choice eq "2" ) {
+            if ( !-x "$DIAMOND_BIN_DIR/diamond" ) {
+                print "Unable to find the diamond executable in $DIAMOND_BIN_DIR. Please update \$DIAMOND_BIN_DIR and try again.\n";
+                next;
+            }
+            print "Using DIAMOND located in $DIAMOND_BIN_DIR\n" if $DEBUG >= 1;
+            return 'diamond';
+        }
+        else {
+            print "*! Wrong Menu Choice - Please Try Again !*\n";
+        }
+    }
+}
+
+sub search_tool_label {
+    return $SEARCH_TOOL eq 'diamond' ? 'DIAMOND' : 'BLAST+';
+}
+
 sub initial_menu {
     print `clear`, "\n";
     print "  __     _   __  ___  _       _    ___  _____ \n";
@@ -243,9 +284,12 @@ sub menu {
     print "                                    v$VERSION\n";
     print "***********************************************\n";
 
-    # Options for BLAST
-    print "Step 1: BLAST Analysis\n----------------------\n";
-    print "1) FORMATDB Only\t\t2) BLASTALL Only\n";
+    my $prep_label   = $SEARCH_TOOL eq 'diamond' ? 'DIAMOND makedb' : 'makeblastdb';
+    my $search_label = $SEARCH_TOOL eq 'diamond' ? 'DIAMOND blastp' : 'BLASTP';
+
+    # Options for BLAST/DIAMOND
+    print "Step 1: " . search_tool_label() . " Analysis\n----------------------\n";
+    print "1) $prep_label Only\t\t2) $search_label Only\n";
     print "B) Both Options 1 & 2\n\n";
 
     # Options for fdfBLAST
@@ -255,7 +299,7 @@ sub menu {
 
     # Other Options
     print "Other Options\n-------------\n";
-    print "C) Change Run ID\t\tQ) Quit\n\n";
+    print "C) Change Run ID\t\tT) Change Search Tool\t\tQ) Quit\n\n";
 
     #
     print "$RUN_ID>:";
@@ -308,6 +352,11 @@ sub menu {
             run_ID();
             menu();
         }
+        when (/T/ism) {
+            print `clear`, "\n";
+            $SEARCH_TOOL = select_search_tool();
+            menu();
+        }
         when (/Q/ism) {
             print `clear`, "\n";
             print
@@ -322,7 +371,7 @@ sub menu {
 }
 
 sub menu_one {
-    my $menu_choice = "FormatDB";
+    my $menu_choice = $SEARCH_TOOL eq 'diamond' ? 'DIAMOND makedb' : 'makeblastdb';
     print_time( "start", $menu_choice );
     @GENOME_LIST = get_genomes();
     formatdb(@GENOME_LIST);
@@ -330,7 +379,7 @@ sub menu_one {
 }
 
 sub menu_two {
-    my $menu_choice = "BlastAll";
+    my $menu_choice = $SEARCH_TOOL eq 'diamond' ? 'DIAMOND blastp' : 'BLASTP';
     print_time( "start", $menu_choice );
     @GENOME_LIST = get_genomes();
     blastall(@GENOME_LIST);
@@ -421,29 +470,51 @@ sub get_genomes {
     return @file_names;
 }
 
-# A method to call the formatdb program from the command line
+# A method to prepare sequence databases from the command line
 # and run it for each .fas FASTA formatted genome in a directory
-## This will probably need updating to include the new BLAST+ programs
+# Supports BLAST+ makeblastdb and DIAMOND makedb
 sub formatdb {
 
-    my @genomes = @_;
-    print "\nFORTMATDB - Formating Databases...\n";
+    my @genomes    = @_;
+    my $tool_label = $SEARCH_TOOL eq 'diamond' ? 'DIAMOND makedb' : 'MAKEBLASTDB';
 
-    for ( 0 .. $#genomes ) {
-        print "$genomes[$_] \x3E\x3E\x3E";
+    print "\n$tool_label - Formatting Databases...\n";
 
-        # This line calls the formatdb program within a previously set directory
-        # it then outputs the databse genomes files to another directory
-        my $results = `$BLAST_BIN_DIR/formatdb -t $GENOME_DIR/$genomes[$_] -i $GENOME_DIR/$genomes[$_] -p T -o T`;
-        print " Completed\n";
+    for my $genome (@genomes) {
+        print "$genome \x3E\x3E\x3E";
+        my ( $basename, undef, undef ) = fileparse( $genome, '\\..*' );
+        my $input_path = "$GENOME_DIR/$genome";
+        my $status;
+
+        if ( $SEARCH_TOOL eq 'diamond' ) {
+            $status = system( "$DIAMOND_BIN_DIR/diamond", "makedb", "--in", $input_path, "-d", "$GENOME_DIR/$basename" );
+        }
+        else {
+            $status = system(
+                "$BLAST_BIN_DIR/makeblastdb", "-in",  $input_path,                  "-dbtype",     "prot",
+                "-parse_seqids",               "-out", "$GENOME_DIR/$basename"
+            );
+        }
+
+        if ( $status == 0 ) {
+            print " Completed\n";
+        }
+        elsif ( $status == -1 ) {
+            print " Failed to execute ($!)\n";
+        }
+        else {
+            my $exit_code = $status >> 8;
+            print " Failed (exit code $exit_code)\n";
+        }
     }
-    print "FORMATDB - Finished...\n\n";
+    print "$tool_label - Finished...\n\n";
 }
 
-## This will probably need updating to include the new BLAST+ programs
+# Run either BLAST+ blastp or DIAMOND blastp depending on the selected tool
 sub blastall {
 
-    my @genomes = @_;
+    my @genomes      = @_;
+    my $search_label = $SEARCH_TOOL eq 'diamond' ? 'DIAMOND blastp' : 'BLASTP';
 
     # Create the g2gc output folder, if not then error, quit. This is a little harsh...
     mkdir( $G2GC_DIR, 0777 );
@@ -454,25 +525,47 @@ sub blastall {
       . ( $#genomes + 1 ) . " x "
       . ( $#genomes + 1 ) . " = "
       . ( $#genomes + 1 ) * ( $#genomes + 1 ) . "\n";
-    print "Performing BLASTP\n";
+    print "Performing $search_label\n";
 
     for ( my $i = 0 ; $i <= $#genomes ; $i++ ) {
         for ( my $j = 0 ; $j <= $#genomes ; $j++ ) {
-            my ( $file_i, $diri, $exti ) = fileparse( $genomes[$i], '\..*' );
-            my ( $file_j, $dirj, $extj ) = fileparse( $genomes[$j], '\..*' );
+            my ( $file_i, $diri, $exti ) = fileparse( $genomes[$i], '\\..*' );
+            my ( $file_j, $dirj, $extj ) = fileparse( $genomes[$j], '\\..*' );
             print "$file_i to $file_j \x3E\x3E\x3E ";
 
             if ( -e "$G2GC_DIR/$file_j\_$file_i.bpo" ) {
                 print "already exists...Skipping\n";
             }
             else {
-                my $results =
-`$BLAST_BIN_DIR/blastall -p blastp -d $GENOME_DIR/$genomes[$i] -i $GENOME_DIR/$genomes[$j] -m 0 -a $CORE_NUM -F F -o $G2GC_DIR/$file_j\_$file_i.bpo`;
-                print "Completed\n";
+                my $status;
+
+                if ( $SEARCH_TOOL eq 'diamond' ) {
+                    $status = system(
+                        "$DIAMOND_BIN_DIR/diamond", "blastp", "-d", "$GENOME_DIR/$file_i", "-q", "$GENOME_DIR/$genomes[$j]",
+                        "--threads", $CORE_NUM, "--outfmt", "0", "--masking", "0", "--out", "$G2GC_DIR/$file_j\_$file_i.bpo"
+                    );
+                }
+                else {
+                    $status = system(
+                        "$BLAST_BIN_DIR/blastp", "-db", "$GENOME_DIR/$file_i", "-query", "$GENOME_DIR/$genomes[$j]",
+                        "-outfmt", "0", "-num_threads", $CORE_NUM, "-seg", "no", "-out", "$G2GC_DIR/$file_j\_$file_i.bpo"
+                    );
+                }
+
+                if ( $status == 0 ) {
+                    print "Completed\n";
+                }
+                elsif ( $status == -1 ) {
+                    print "Failed to execute ($!)\n";
+                }
+                else {
+                    my $exit_code = $status >> 8;
+                    print "Failed (exit code $exit_code)\n";
+                }
             }
         }
     }
-    print "\nBLASTALL Successful\n";
+    print "\n$search_label Successful\n";
 }
 
 # Change user submission from 1e-10 to 0.01 etc
