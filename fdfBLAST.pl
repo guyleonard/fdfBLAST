@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #######
 # $URL: https://github.com/guyleonard/fdfBLAST $
 # $Date: 2012-07-02 $
@@ -28,8 +28,8 @@ our $WORKING_DIR = getcwd;
 
 ###
 # User Editable Variables
-our $BLAST_BIN_DIR   = "/usr/bin";    # Normal install = /usr/bin/
-our $DIAMOND_BIN_DIR = "/usr/bin";    # Default location of the diamond executable
+our $BLAST_BIN_DIR   = "/usr/bin/env ";    # Normal install = /usr/bin/
+our $DIAMOND_BIN_DIR = "/usr/bin/env ";    # Default location of the diamond executable
 ###
 
 # Other Variables
