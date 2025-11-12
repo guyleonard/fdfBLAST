@@ -21,6 +21,8 @@ use GD;                # Creates PNG images
 # use GD::SVG;               # Creates SVG images - uncomment if you want SVG output
 use Math::BigFloat;        # Arbitrary size floating point math package (handles e-values)
 use feature qw(switch);    # This is the given replacement of deprecated switch statement
+no warnings 'experimental::switch';
+no warnings 'experimental::smartmatch';
 use Time::Local;           # For time elapsed when running different stages
 
 # Global Directory Information
