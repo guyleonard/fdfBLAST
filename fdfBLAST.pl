@@ -279,7 +279,13 @@ sub run_ID {
         $RUN_ID = time(); # I figure this is safe enough to use, it won't be used often and never at the exact same time
         print "Your ID is now: $RUN_ID\n";
     }
-    my $RUN_DIR = "$WORKING_DIR/run/$RUN_ID";
+    my $RUN_ROOT = "$WORKING_DIR/run";
+    if ( !-d $RUN_ROOT ) {
+        mkdir( $RUN_ROOT, 0755 )
+          || die "Unable to create run directory '$RUN_ROOT': $!";
+    }
+
+    my $RUN_DIR = "$RUN_ROOT/$RUN_ID";
 
     if ( -e $RUN_DIR && -d $RUN_DIR ) {
         $G2GC_DIR = "$GENOME_DIR/g2gc";
@@ -297,7 +303,7 @@ sub run_ID {
     }
     else {
         mkdir( $RUN_DIR, 0755 )
-          || die "Cannot be the same name as existing directory or 'run' is missing!";
+          || die "Cannot create run directory '$RUN_DIR': $!";
         $G2GC_DIR = "$GENOME_DIR/g2gc";
         $RUN_DIR  = "$WORKING_DIR/run/$RUN_ID";
 
