@@ -28,8 +28,11 @@ our $WORKING_DIR = getcwd;
 
 ###
 # User Editable Variables
-our $BLAST_BIN_DIR   = "/usr/bin/env ";    # Normal install = /usr/bin/
-our $DIAMOND_BIN_DIR = "/usr/bin/env ";    # Default location of the diamond executable
+our $BLAST_BIN_DIR   = q{};    # Optional override for BLAST+ executables directory
+our $DIAMOND_BIN_DIR = q{};    # Optional override for the DIAMOND executable directory
+our $MAKEBLASTDB_PATH = q{};
+our $BLASTP_PATH      = q{};
+our $DIAMOND_PATH     = q{};
 ###
 
 # Other Variables
@@ -177,6 +180,33 @@ sub which_genomes {
     return $directory;
 }
 
+sub locate_executable {
+
+    my ( $preferred_dir, $executable ) = @_;
+    my @candidates;
+
+    if ( defined $preferred_dir && $preferred_dir ne q{} ) {
+        push @candidates, $preferred_dir if -x $preferred_dir;
+        push @candidates, "$preferred_dir/$executable";
+    }
+
+    if ( exists $ENV{PATH} ) {
+        push @candidates,
+          map {
+            my $dir = defined $_ && $_ ne q{} ? $_ : q{.};
+            "$dir/$executable";
+          }
+          grep { defined $_ }
+          split /:/, $ENV{PATH};
+    }
+
+    for my $candidate (@candidates) {
+        return $candidate if -x $candidate;
+    }
+
+    return;
+}
+
 sub select_search_tool {
 
     while (1) {
@@ -190,19 +220,33 @@ sub select_search_tool {
         $choice = "1" if $choice eq $EMPTY;
 
         if ( $choice eq "1" ) {
-            if ( !-x "$BLAST_BIN_DIR/makeblastdb" || !-x "$BLAST_BIN_DIR/blastp" ) {
-                print "Unable to find makeblastdb or blastp in $BLAST_BIN_DIR. Please update \$BLAST_BIN_DIR and try again.\n";
+            my $makeblastdb_path = locate_executable( $BLAST_BIN_DIR, 'makeblastdb' );
+            my $blastp_path      = locate_executable( $BLAST_BIN_DIR, 'blastp' );
+            my $location_label   = $BLAST_BIN_DIR ne q{} ? $BLAST_BIN_DIR : 'PATH';
+
+            if ( !$makeblastdb_path || !$blastp_path ) {
+                print "Unable to find makeblastdb or blastp in $location_label. Please update \$BLAST_BIN_DIR or adjust your PATH and try again.\n";
                 next;
             }
-            print "Using BLAST+ tools located in $BLAST_BIN_DIR\n" if $DEBUG >= 1;
+
+            $MAKEBLASTDB_PATH = $makeblastdb_path;
+            $BLASTP_PATH      = $blastp_path;
+            my $display_dir   = dirname($MAKEBLASTDB_PATH);
+            print "Using BLAST+ tools located in $display_dir\n" if $DEBUG >= 1;
             return 'blast';
         }
         elsif ( $choice eq "2" ) {
-            if ( !-x "$DIAMOND_BIN_DIR/diamond" ) {
-                print "Unable to find the diamond executable in $DIAMOND_BIN_DIR. Please update \$DIAMOND_BIN_DIR and try again.\n";
+            my $diamond_path    = locate_executable( $DIAMOND_BIN_DIR, 'diamond' );
+            my $location_label  = $DIAMOND_BIN_DIR ne q{} ? $DIAMOND_BIN_DIR : 'PATH';
+
+            if ( !$diamond_path ) {
+                print "Unable to find the diamond executable in $location_label. Please update \$DIAMOND_BIN_DIR or adjust your PATH and try again.\n";
                 next;
             }
-            print "Using DIAMOND located in $DIAMOND_BIN_DIR\n" if $DEBUG >= 1;
+
+            $DIAMOND_PATH  = $diamond_path;
+            my $display_dir = dirname($DIAMOND_PATH);
+            print "Using DIAMOND located in $display_dir\n" if $DEBUG >= 1;
             return 'diamond';
         }
         else {
@@ -487,12 +531,11 @@ sub formatdb {
         my $status;
 
         if ( $SEARCH_TOOL eq 'diamond' ) {
-            $status = system( "$DIAMOND_BIN_DIR/diamond", "makedb", "--in", $input_path, "-d", "$GENOME_DIR/$basename" );
+            $status = system( $DIAMOND_PATH, "makedb", "--in", $input_path, "-d", "$GENOME_DIR/$basename" );
         }
         else {
             $status = system(
-                "$BLAST_BIN_DIR/makeblastdb", "-in",  $input_path,                  "-dbtype",     "prot",
-                "-parse_seqids",               "-out", "$GENOME_DIR/$basename"
+                $MAKEBLASTDB_PATH, "-in", $input_path, "-dbtype", "prot", "-parse_seqids", "-out", "$GENOME_DIR/$basename"
             );
         }
 
@@ -541,14 +584,14 @@ sub blastall {
 
                 if ( $SEARCH_TOOL eq 'diamond' ) {
                     $status = system(
-                        "$DIAMOND_BIN_DIR/diamond", "blastp", "-d", "$GENOME_DIR/$file_i", "-q", "$GENOME_DIR/$genomes[$j]",
-                        "--threads", $CORE_NUM, "--outfmt", "0", "--masking", "0", "--out", "$G2GC_DIR/$file_j\_$file_i.bpo"
+                        $DIAMOND_PATH, "blastp", "-d", "$GENOME_DIR/$file_i", "-q", "$GENOME_DIR/$genomes[$j]", "--threads",
+                        $CORE_NUM, "--outfmt", "0", "--masking", "0", "--out", "$G2GC_DIR/$file_j\_$file_i.bpo"
                     );
                 }
                 else {
                     $status = system(
-                        "$BLAST_BIN_DIR/blastp", "-db", "$GENOME_DIR/$file_i", "-query", "$GENOME_DIR/$genomes[$j]",
-                        "-outfmt", "0", "-num_threads", $CORE_NUM, "-seg", "no", "-out", "$G2GC_DIR/$file_j\_$file_i.bpo"
+                        $BLASTP_PATH, "-db", "$GENOME_DIR/$file_i", "-query", "$GENOME_DIR/$genomes[$j]", "-outfmt", "0",
+                        "-num_threads", $CORE_NUM, "-seg", "no", "-out", "$G2GC_DIR/$file_j\_$file_i.bpo"
                     );
                 }
 
