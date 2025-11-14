@@ -79,8 +79,13 @@ It involves using a few command line tools, to process the data.
 	$ hmmpress Pfam-A.hmm
 
 2) In your 'run' folder there will be two files: composite_list.csv and split_list.csv
-	These represent the gene accessions for the total of the fusion output
-	Composite = potential fused domains, split = individual domains in potential fusion
+        These represent the gene accessions for the total of the fusion output
+        Composite = potential fused domains, split = individual domains in potential fusion
+        Each image that is generated for a candidate fusion pair is also summarised in
+        composite_pairs.tsv, a tab-delimited table that records the query metadata,
+        both subject segments (coordinates, lengths, and E-values), the pairing type,
+        and the relative path to the PNG. This makes it easier to review or post-process
+        the same data without opening the graphics output.
 
 2a) You need to use the command line program "sort" to sort each file.
 	$ sort composite_list.csv >composite_list_sorted.csv

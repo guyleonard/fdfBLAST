@@ -44,6 +44,10 @@ our @GENOME_LIST = $EMPTY;
 our $HIT_LIMIT   = 500;
 our $SEARCH_TOOL = 'blast';
 
+our @current_pair_one_meta;
+our @current_pair_two_meta;
+our $current_pair_type = q{};
+
 # Workflow
 our ( $CORE_NUM, $CORES ) = detect_multi_core();    # Check for single or multi-core machine for BLAST
 my $location = set_genome_dir();                    # Set where to look for genome directories
@@ -1127,7 +1131,7 @@ sub fusion_scan {
                 $subject_hit_range_end   = $array_line[8];
                 $match_length            = $subject_hit_range_end - $subject_hit_range_start;
                 push( @subject_hits,
-                    "$subject_accession,$subject_hit_range_start,$subject_hit_range_end,$subject_length" )
+                    "$subject_accession,$subject_hit_range_start,$subject_hit_range_end,$subject_length,$subject_evalue" )
                   if $match_length > 50 && $subject_length > 50;
                 #####
                 print "\nQ $query_accession -> $subject_accession\n"
@@ -1305,6 +1309,9 @@ sub left_and_right {
             print "\tRlr: $one_end / $two_start = $ratio\n" if $DEBUG >= 1;
 
             if ( $ratio >= $lower_ratio && $ratio <= $higher_ratio ) {
+                @current_pair_one_meta = @unfused_one;
+                @current_pair_two_meta = @unfused_two;
+                $current_pair_type     = 'LR';
                 undef(@subject_hits);
                 push( @subject_hits, "$unfused_one[0],$unfused_one[1],$unfused_one[2],$unfused_one[3]" );
                 push( @subject_hits, "$unfused_two[0],$unfused_two[1],$unfused_two[2],$unfused_two[3]" );
@@ -1379,6 +1386,9 @@ sub middle_and_left {
                 print "\tRml: $one_end / $two_start = $ratio\n"
                   if $DEBUG >= 1;
                 if ( $ratio >= $lower_ratio && $ratio <= $higher_ratio ) {
+                    @current_pair_one_meta = @unfused_one;
+                    @current_pair_two_meta = @unfused_two;
+                    $current_pair_type     = 'ML';
                     undef(@subject_hits);
                     push( @subject_hits, "$unfused_one[0],$unfused_one[1],$unfused_one[2],$unfused_one[3]" );
                     push( @subject_hits, "$unfused_two[0],$unfused_two[1],$unfused_two[2],$unfused_two[3]" );
@@ -1417,6 +1427,9 @@ sub middle_and_right {
                 print "\tRmr: $one_end / $two_start = $ratio\n"
                   if $DEBUG >= 1;
                 if ( $ratio >= $lower_ratio && $ratio <= $higher_ratio ) {
+                    @current_pair_one_meta = @unfused_one;
+                    @current_pair_two_meta = @unfused_two;
+                    $current_pair_type     = 'MR';
                     undef(@subject_hits);
                     push( @subject_hits, "$unfused_one[0],$unfused_one[1],$unfused_one[2],$unfused_one[3]" );
                     push( @subject_hits, "$unfused_two[0],$unfused_two[1],$unfused_two[2],$unfused_two[3]" );
@@ -1441,6 +1454,85 @@ sub print_split_list {
     open my $log_fh, '>>', "$RUN_DIR/split_list.csv";
     print $log_fh "$message";
     close($log_fh);
+}
+
+sub log_composite_summary {
+    my %args = @_;
+
+    my $summary_path = "$RUN_DIR/composite_pairs.tsv";
+    my $needs_header = !-e $summary_path;
+
+    if ( open my $summary_fh, '>>', $summary_path ) {
+        if ($needs_header) {
+            print $summary_fh join(
+                "\t",
+                qw(
+                  query_accession
+                  query_length
+                  ratio
+                  pairing_type
+                  subject1_accession
+                  subject1_query_start
+                  subject1_query_end
+                  subject1_match_length
+                  subject1_length
+                  subject1_evalue
+                  subject2_accession
+                  subject2_query_start
+                  subject2_query_end
+                  subject2_match_length
+                  subject2_length
+                  subject2_evalue
+                  image_path
+                )
+              ),
+              "\n";
+        }
+
+        my @subject_one = @{ $args{subject_one} // [] };
+        my @subject_two = @{ $args{subject_two} // [] };
+
+        if ( !@subject_one || !@subject_two ) {
+            close($summary_fh);
+            return;
+        }
+
+        my $subject1_match_length =
+          defined $subject_one[1] && defined $subject_one[2]
+          ? $subject_one[2] - $subject_one[1]
+          : $EMPTY;
+        my $subject2_match_length =
+          defined $subject_two[1] && defined $subject_two[2]
+          ? $subject_two[2] - $subject_two[1]
+          : $EMPTY;
+
+        print $summary_fh join(
+            "\t",
+            $args{query_accession} // $EMPTY,
+            $args{query_length}    // $EMPTY,
+            $args{ratio}           // $EMPTY,
+            $args{pairing_type}    // $EMPTY,
+            $subject_one[0]        // $EMPTY,
+            $subject_one[1]        // $EMPTY,
+            $subject_one[2]        // $EMPTY,
+            $subject1_match_length // $EMPTY,
+            $subject_one[3]        // $EMPTY,
+            defined $subject_one[4] ? $subject_one[4] : $EMPTY,
+            $subject_two[0]        // $EMPTY,
+            $subject_two[1]        // $EMPTY,
+            $subject_two[2]        // $EMPTY,
+            $subject2_match_length // $EMPTY,
+            $subject_two[3]        // $EMPTY,
+            defined $subject_two[4] ? $subject_two[4] : $EMPTY,
+            $args{image_path}      // $EMPTY
+          ),
+          "\n";
+
+        close($summary_fh);
+    }
+    else {
+        warn "Unable to write composite summary to $summary_path\n";
+    }
 }
 
 sub read_domain_file {
@@ -1525,51 +1617,41 @@ sub generate_image {
     @unfused_one = split( /,/, $subject_hits[0] );
     @unfused_two = split( /,/, $subject_hits[1] );
 
+    my $image_filename = "$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
+
     # We only really need 1dp for the folders, 2dp ratio is printed in image...
     $ratio = sprintf( "%.1f", $ratio );
 
     $query_accession_dir = "$GENE_HITS_DIFFERENTIALS/$query_accession";
+    $ratio_dir           = "$query_accession_dir/$ratio";
 
     &print_comp_list("$query_accession,\n");
     &print_split_list("$unfused_one[0],\n$unfused_two[0],\n");
 
-    if ( -e $query_accession_dir && -d $query_accession_dir ) {
-
-        $ratio_dir = "$query_accession_dir/$ratio";
-        if ( -e $ratio_dir && -d $ratio_dir ) {
-
-            open my $out_fh, '>', "$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
-            binmode $out_fh;
-            print $out_fh $im->png(9);
-            close($out_fh);
-        }
-        else {
-            mkdir( $ratio_dir, 0755 );
-            open $out_fh, '>', "$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
-            binmode $out_fh;
-            print $out_fh $im->png(9);
-            close($out_fh);
-        }
-    }
-    else {
-
+    if ( !-d $query_accession_dir ) {
         mkdir( $query_accession_dir, 0755 );
-        $ratio_dir = "$query_accession_dir/$ratio";
-        if ( -e $ratio_dir && -d $ratio_dir ) {
-
-            open $out_fh, '>', "$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
-            binmode $out_fh;
-            print $out_fh $im->png(9);
-            close($out_fh);
-        }
-        else {
-            mkdir( $ratio_dir, 0755 );
-            open $out_fh, '>', "$ratio_dir/$query_accession\_\_$unfused_one[0]\_\_$unfused_two[0].png";
-            binmode $out_fh;
-            print $out_fh $im->png(9);
-            close($out_fh);
-        }
     }
+
+    if ( !-d $ratio_dir ) {
+        mkdir( $ratio_dir, 0755 );
+    }
+
+    my $image_output_path = "$ratio_dir/$image_filename";
+    open my $out_fh, '>', $image_output_path;
+    binmode $out_fh;
+    print $out_fh $im->png(9);
+    close($out_fh);
+
+    my $image_rel_path = "$query_accession/$ratio/$image_filename";
+    &log_composite_summary(
+        query_accession => $query_accession,
+        query_length    => $query_length,
+        ratio           => $ratio,
+        pairing_type    => $current_pair_type,
+        subject_one     => \@current_pair_one_meta,
+        subject_two     => \@current_pair_two_meta,
+        image_path      => $image_rel_path
+    );
 }
 
 sub draw_query {
